@@ -1,0 +1,27 @@
+services:
+  ere.db.server:
+    image: postgres
+    user: postgres
+    ports:
+      - 5009:5432
+    environment:
+      - POSTGRES_DB=ere.db
+      - POSTGRES_PASSWORD=ere.db
+    volumes:
+      - ere.db-data:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=tou@ere.com
+      - PGADMIN_DEFAULT_PASSWORD=tou
+    ports:
+      - 80:80
+    depends_on:
+      - ere.db.server
+    volumes:
+      - ere-pg:/var/lib/pgadmin
+
+volumes:
+  ere.db-data:
+  ere-pg:
