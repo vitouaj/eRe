@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using eRe.Infrastructure;
@@ -11,9 +12,11 @@ using eRe.Infrastructure;
 namespace eRe.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240325144821_CreateReportandReportItem")]
+    partial class CreateReportandReportItem
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -51,7 +54,7 @@ namespace eRe.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Classrooms", (string)null);
+                    b.ToTable("Classrooms");
                 });
 
             modelBuilder.Entity("eRe.Classroom.Enrollment", b =>
@@ -66,7 +69,7 @@ namespace eRe.Migrations
 
                     b.HasIndex("StudentId");
 
-                    b.ToTable("Enrollments", (string)null);
+                    b.ToTable("Enrollments");
                 });
 
             modelBuilder.Entity("eRe.Classroom.Student", b =>
@@ -76,7 +79,7 @@ namespace eRe.Migrations
 
                     b.HasKey("StudentId");
 
-                    b.ToTable("Students", (string)null);
+                    b.ToTable("Students");
                 });
 
             modelBuilder.Entity("eRe.Grade", b =>
@@ -96,7 +99,7 @@ namespace eRe.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Grades", (string)null);
+                    b.ToTable("Grades");
 
                     b.HasData(
                         new
@@ -145,7 +148,7 @@ namespace eRe.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Month", (string)null);
+                    b.ToTable("Month");
 
                     b.HasData(
                         new
@@ -268,7 +271,7 @@ namespace eRe.Migrations
 
                     b.HasIndex("StudentId");
 
-                    b.ToTable("Reports", (string)null);
+                    b.ToTable("Reports");
                 });
 
             modelBuilder.Entity("eRe.ReportItem", b =>
@@ -296,7 +299,7 @@ namespace eRe.Migrations
 
                     b.HasIndex("SubjectItemId");
 
-                    b.ToTable("ReportItems", (string)null);
+                    b.ToTable("ReportItems");
                 });
 
             modelBuilder.Entity("eRe.Subject", b =>
@@ -313,7 +316,7 @@ namespace eRe.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Subjects", (string)null);
+                    b.ToTable("Subjects");
 
                     b.HasData(
                         new
@@ -386,11 +389,11 @@ namespace eRe.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasAlternateKey("SubjectId", "ClassroomId");
-
                     b.HasIndex("ClassroomId");
 
-                    b.ToTable("SubjectItems", (string)null);
+                    b.HasIndex("SubjectId");
+
+                    b.ToTable("SubjectItems");
                 });
 
             modelBuilder.Entity("eRe.User.Role", b =>
@@ -407,7 +410,7 @@ namespace eRe.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Roles", (string)null);
+                    b.ToTable("Roles");
 
                     b.HasData(
                         new
@@ -459,7 +462,7 @@ namespace eRe.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("eRe.Classroom.Enrollment", b =>

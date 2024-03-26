@@ -21,9 +21,9 @@ namespace eRe.Migrations
                     Id = table.Column<string>(type: "text", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "text", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
                     TeacherId = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
@@ -145,7 +145,7 @@ namespace eRe.Migrations
                     StudentId = table.Column<string>(type: "text", nullable: false),
                     ClassroomId = table.Column<string>(type: "text", nullable: false),
                     IssuedBy = table.Column<string>(type: "text", nullable: false),
-                    IssuedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IssuedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "text", nullable: false),
                     Accepted = table.Column<bool>(type: "boolean", nullable: false),
                     IsSent = table.Column<bool>(type: "boolean", nullable: false),
@@ -299,8 +299,7 @@ namespace eRe.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_ReportItems_SubjectItemId",
                 table: "ReportItems",
-                column: "SubjectItemId",
-                unique: true);
+                column: "SubjectItemId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Reports_ClassroomId",

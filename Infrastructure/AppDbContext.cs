@@ -88,6 +88,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         */
         builder.Entity<SubjectItem>()
             .HasKey(st => st.Id);
+        
+        builder.Entity<SubjectItem>()
+            .HasAlternateKey(st => new {st.SubjectId, st.ClassroomId});
+
+        builder.Entity<SubjectItem>()
+            .Property(s => s.SubjectId)
+            .HasConversion<string>();
 
         builder.Entity<Subject>()
             .HasKey(s => s.Id);
@@ -122,8 +129,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         builder.Entity<ReportItem>()
             .HasOne(ri => ri.SubjectItem)
-            .WithOne(s => s.ReportItem)
-            .HasForeignKey<ReportItem>(ri => ri.SubjectItemId);
+            .WithMany(s => s.ReportItems)
+            .HasForeignKey(ri => ri.SubjectItemId);
 
         builder.Entity<Report>()
             .HasKey(r => r.ReportId);
@@ -132,7 +139,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .Property(r => r.Month)
             .HasConversion<string>();
 
-        builder.Entity<Report>()
+        builder.Entity<Report>()    
             .HasMany(r => r.ReportItems)
             .WithOne(ri => ri.Report)
             .HasForeignKey(ri => ri.ReportId)
@@ -172,7 +179,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasData(
                 Enum.GetValues<SubjectType>()
                     .Cast<SubjectType>()
-                    .Select(st => new Subject { Id = (int)st, Name = st })
+                    .Select(st => new Subject { Id = (int) st, Name = st })
             );
 
         builder.Entity<Grade>()

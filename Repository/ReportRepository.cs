@@ -1,7 +1,9 @@
 ﻿using System.Data.Common;
+using System.Text.Json.Serialization;
 using eRe.Infrastructure;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using Npgsql.Internal;
 
 namespace eRe.Repository;
@@ -59,7 +61,7 @@ public class ReportRepository(AppDbContext context) : IReportRepository
         await db.Reports.AddAsync(report);
         await db.SaveChangesAsync();
 
-        var json = JsonContent.Create(report);
+        var json = JsonConvert.SerializeObject(report, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore, Formatting = Formatting.Indented });
 
         return json;
     }
@@ -68,9 +70,33 @@ public class ReportRepository(AppDbContext context) : IReportRepository
     {
         var results = await db.Reports
             .Include(c => c.ReportItems)
-            .FirstOrDefaultAsync(r => r.ClassroomId.Equals(classId));
+            .Where(r => r.ClassroomId.Equals(classId))
+            .Select(m => new {
+                m.ReportId,
+                Month = ((MonthOfYear)m.Month).ToString(),
+                m.StudentId,
+                m.ClassroomId,
+                m.Classroom.Name,
+                ReportItems = m.ReportItems.Select(e => 
+                new {
+                    Subject = e.SubjectItem.Subject.Name.ToString(),
+                    e.SubjectItem.MaxScore,
+                    e.Score,
+                    Grade = ((GradeLevel)e.GradeId).ToString(),
+                }),
+                m.Absence,
+                m.Permission,
+                m.TotalScore,
+                m.Average,
+                m.TeacherCmt,
+                m.ParentCmt,
+                m.Classroom.TeacherId,
+                m.IssuedBy,
+                m.IssuedAt,
+            })
+            .FirstOrDefaultAsync();
 
-        var json = JsonContent.Create(results);
+        var json = JsonConvert.SerializeObject(results);
 
         return json;
     }

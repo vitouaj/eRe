@@ -12,8 +12,8 @@ using eRe.Infrastructure;
 namespace eRe.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20240325100333_CreateReportandReportItem")]
-    partial class CreateReportandReportItem
+    [Migration("20240326020811_SubjectItemCompositeKey")]
+    partial class SubjectItemCompositeKey
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -31,7 +31,7 @@ namespace eRe.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
@@ -46,7 +46,7 @@ namespace eRe.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("UpdatedBy")
                         .IsRequired()
@@ -235,7 +235,7 @@ namespace eRe.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<DateTime>("IssuedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("IssuedBy")
                         .IsRequired()
@@ -297,8 +297,7 @@ namespace eRe.Migrations
 
                     b.HasIndex("ReportId");
 
-                    b.HasIndex("SubjectItemId")
-                        .IsUnique();
+                    b.HasIndex("SubjectItemId");
 
                     b.ToTable("ReportItems");
                 });
@@ -390,9 +389,9 @@ namespace eRe.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ClassroomId");
+                    b.HasAlternateKey("SubjectId", "ClassroomId");
 
-                    b.HasIndex("SubjectId");
+                    b.HasIndex("ClassroomId");
 
                     b.ToTable("SubjectItems");
                 });
@@ -509,8 +508,8 @@ namespace eRe.Migrations
                         .IsRequired();
 
                     b.HasOne("eRe.SubjectItem", "SubjectItem")
-                        .WithOne("ReportItem")
-                        .HasForeignKey("eRe.ReportItem", "SubjectItemId")
+                        .WithMany("ReportItems")
+                        .HasForeignKey("SubjectItemId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -562,8 +561,7 @@ namespace eRe.Migrations
 
             modelBuilder.Entity("eRe.SubjectItem", b =>
                 {
-                    b.Navigation("ReportItem")
-                        .IsRequired();
+                    b.Navigation("ReportItems");
                 });
 #pragma warning restore 612, 618
         }

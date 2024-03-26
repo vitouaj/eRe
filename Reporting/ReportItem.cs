@@ -19,7 +19,7 @@ public class SubjectItem
     public Subject Subject { get; set; }
     public float MaxScore { get; set; }
     public float PassingScore { get; set; }
-    public ReportItem ReportItem { get; set; }
+    public List<ReportItem> ReportItems { get; set; }
     public string ClassroomId { get; set; }
     public Classroom.Classroom Classroom { get; set; }
 }
