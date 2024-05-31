@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using eRe.Infrastructure;
@@ -11,9 +12,11 @@ using eRe.Infrastructure;
 namespace eRe.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240526161732_InitResovleIssue")]
+    partial class InitResovleIssue
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -145,7 +148,7 @@ namespace eRe.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Months");
+                    b.ToTable("Month");
 
                     b.HasData(
                         new
@@ -242,16 +245,10 @@ namespace eRe.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("OverallGrade")
-                        .HasColumnType("integer");
-
                     b.Property<string>("ParentCmt")
                         .HasColumnType("text");
 
                     b.Property<int>("Permission")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Ranking")
                         .HasColumnType("integer");
 
                     b.Property<string>("StudentId")

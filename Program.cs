@@ -3,7 +3,18 @@ using eRe.Infrastructure;
 using eRe.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
+var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: MyAllowSpecificOrigins,
+                      policy =>
+                          {
+                              policy.WithOrigins("http://localhost:3000")
+                                                  .AllowAnyHeader()
+                                                  .AllowAnyMethod();
+                          });
+});
 
 builder.Services.AddScoped<IClassroomRepository, ClassroomRepository>();
 builder.Services.AddScoped<IUserRepostory, UserRepository>();
@@ -22,6 +33,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseCors(MyAllowSpecificOrigins);
+
 
 app.UseHttpsRedirection();
 

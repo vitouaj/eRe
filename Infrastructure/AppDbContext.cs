@@ -16,6 +16,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Grade> Grades { get; set; }
     public DbSet<User.User> Users { get; set; }
     public DbSet<Role> Roles { get; set; }
+    public DbSet<Month> Months { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder builder)
     {
@@ -88,13 +89,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         */
         builder.Entity<SubjectItem>()
             .HasKey(st => st.Id);
-        
-        builder.Entity<SubjectItem>()
-            .HasAlternateKey(st => new {st.SubjectId, st.ClassroomId});
 
         builder.Entity<SubjectItem>()
-            .Property(s => s.SubjectId)
-            .HasConversion<string>();
+            .HasAlternateKey(st => new { st.SubjectId, st.ClassroomId });
 
         builder.Entity<Subject>()
             .HasKey(s => s.Id);
@@ -139,7 +136,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .Property(r => r.Month)
             .HasConversion<string>();
 
-        builder.Entity<Report>()    
+        builder.Entity<Report>()
             .HasMany(r => r.ReportItems)
             .WithOne(ri => ri.Report)
             .HasForeignKey(ri => ri.ReportId)
@@ -179,7 +176,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasData(
                 Enum.GetValues<SubjectType>()
                     .Cast<SubjectType>()
-                    .Select(st => new Subject { Id = (int) st, Name = st })
+                    .Select(st => new Subject { Id = (int)st, Name = st })
             );
 
         builder.Entity<Grade>()

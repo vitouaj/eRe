@@ -12,8 +12,8 @@ using eRe.Infrastructure;
 namespace eRe.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20240325144821_CreateReportandReportItem")]
-    partial class CreateReportandReportItem
+    [Migration("20240529160226_add_RankingField_OverallGrade_Report")]
+    partial class add_RankingField_OverallGrade_Report
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -148,7 +148,7 @@ namespace eRe.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Month");
+                    b.ToTable("Months");
 
                     b.HasData(
                         new
@@ -245,10 +245,16 @@ namespace eRe.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("OverallGrade")
+                        .HasColumnType("integer");
+
                     b.Property<string>("ParentCmt")
                         .HasColumnType("text");
 
                     b.Property<int>("Permission")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Ranking")
                         .HasColumnType("integer");
 
                     b.Property<string>("StudentId")
@@ -389,9 +395,9 @@ namespace eRe.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ClassroomId");
+                    b.HasAlternateKey("SubjectId", "ClassroomId");
 
-                    b.HasIndex("SubjectId");
+                    b.HasIndex("ClassroomId");
 
                     b.ToTable("SubjectItems");
                 });
@@ -443,6 +449,10 @@ namespace eRe.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("OtherContact")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Password")
                         .IsRequired()
                         .HasColumnType("text");
 

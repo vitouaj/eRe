@@ -17,13 +17,15 @@ public class Report
     public bool Accepted { get; set; }
     public bool IsSent { get; set; }
     public float TotalScore { get; set; }
+    public GradeLevel OverallGrade { get; set; }
+    public int Ranking { get; set; }
     public float Average { get; set; }
     public int Absence { get; set; }
     public int Permission { get; set; }
     public string? TeacherCmt { get; set; }
     public string? ParentCmt { get; set; }
     public MonthOfYear Month { get; set; }
-    
+
     [JsonIgnore]
     public List<ReportItem> ReportItems { get; set; }
 }

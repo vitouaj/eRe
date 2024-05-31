@@ -12,8 +12,8 @@ using eRe.Infrastructure;
 namespace eRe.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20240326020811_SubjectItemCompositeKey")]
-    partial class SubjectItemCompositeKey
+    [Migration("20240529060920_addmonthstable")]
+    partial class addmonthstable
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -148,7 +148,7 @@ namespace eRe.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Month");
+                    b.ToTable("Months");
 
                     b.HasData(
                         new
@@ -443,6 +443,10 @@ namespace eRe.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("OtherContact")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Password")
                         .IsRequired()
                         .HasColumnType("text");
 

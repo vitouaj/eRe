@@ -9,7 +9,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace eRe.Migrations
 {
     /// <inheritdoc />
-    public partial class CreateReportandReportItem : Migration
+    public partial class InitResovleIssue : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -103,6 +103,7 @@ namespace eRe.Migrations
                     Firstname = table.Column<string>(type: "text", nullable: false),
                     Lastname = table.Column<string>(type: "text", nullable: false),
                     Email = table.Column<string>(type: "text", nullable: false),
+                    Password = table.Column<string>(type: "text", nullable: false),
                     Phone = table.Column<string>(type: "text", nullable: false),
                     OtherContact = table.Column<string>(type: "text", nullable: false),
                     ProfileId = table.Column<string>(type: "text", nullable: true),
@@ -188,6 +189,7 @@ namespace eRe.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_SubjectItems", x => x.Id);
+                    table.UniqueConstraint("AK_SubjectItems_SubjectId_ClassroomId", x => new { x.SubjectId, x.ClassroomId });
                     table.ForeignKey(
                         name: "FK_SubjectItems_Classrooms_ClassroomId",
                         column: x => x.ClassroomId,
@@ -315,11 +317,6 @@ namespace eRe.Migrations
                 name: "IX_SubjectItems_ClassroomId",
                 table: "SubjectItems",
                 column: "ClassroomId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SubjectItems_SubjectId",
-                table: "SubjectItems",
-                column: "SubjectId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Users_Email",

@@ -1,5 +1,6 @@
 ﻿using System.Data.Common;
 using System.Text.Json.Serialization;
+using eRe.Dto;
 using eRe.Infrastructure;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.EntityFrameworkCore;
@@ -10,22 +11,26 @@ namespace eRe.Repository;
 
 public interface IReportRepository
 {
-    Task<object> CreateAsync(string teacherId, ReportDto reportDto);
+    Task<Response> CreateAsync(string teacherId, ReportDto reportDto);
 
-    Task<object> GetAllAsync(string classId);
+    Task<Response> GetAllAsync(string classId, MonthOfYear? filterMonth);
 }
 
 public class ReportRepository(AppDbContext context) : IReportRepository
 {
     private readonly AppDbContext db = context;
-    public async Task<object> CreateAsync(string teacherId, ReportDto reportDto)
+    public async Task<Response> CreateAsync(string teacherId, ReportDto reportDto)
     {
+        var response = new Response();
         var report = new Report
         {
             ReportId = Utilities.GenerateReportId(),
             StudentId = reportDto.StudentId,
             ClassroomId = reportDto.ClassroomId,
-            Month = (MonthOfYear)reportDto.Month,
+            TotalScore = reportDto.TotalScore,
+            Average = reportDto.Average,
+            OverallGrade = reportDto.OverallGrade,
+            Month = reportDto.Month,
             IssuedBy = teacherId,
             IssuedAt = DateTime.Now,
             Absence = reportDto.Absence,
@@ -58,27 +63,49 @@ public class ReportRepository(AppDbContext context) : IReportRepository
         report.Accepted = false;
         report.IsSent = false;
 
-        await db.Reports.AddAsync(report);
-        await db.SaveChangesAsync();
+        try
+        {
+            await db.Reports.AddAsync(report);
+            await db.SaveChangesAsync();
 
-        var json = JsonConvert.SerializeObject(report, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore, Formatting = Formatting.Indented });
-
-        return json;
+            response.Success = true;
+            response.Message = "Create report successfully!";
+            response.Payload = report;
+        }
+        catch (Exception ex)
+        {
+            response.Success = false;
+            response.Message = ex.Message;
+        }
+        return response;
     }
 
-    public async Task<object> GetAllAsync(string classId)
+    public async Task<Response> GetAllAsync(string classId, MonthOfYear? filterMonth)
     {
-        var results = await db.Reports
+        var response = new Response();
+
+        var query = db.Reports
             .Include(c => c.ReportItems)
-            .Where(r => r.ClassroomId.Equals(classId))
-            .Select(m => new {
+            .Where(r => r.ClassroomId.Equals(classId));
+
+        if (filterMonth.HasValue)
+        {
+            query = query.Where(r => r.Month == filterMonth.Value);
+        }
+
+        var results = await query
+            .Select(m => new
+            {
                 m.ReportId,
                 Month = ((MonthOfYear)m.Month).ToString(),
                 m.StudentId,
+                StudentFirstname = db.Users.SingleOrDefault(u => u.UserId == m.StudentId).Firstname,
+                StudentLastname = db.Users.SingleOrDefault(u => u.UserId == m.StudentId).Lastname,
                 m.ClassroomId,
                 m.Classroom.Name,
-                ReportItems = m.ReportItems.Select(e => 
-                new {
+                ReportItems = m.ReportItems.Select(e =>
+                new
+                {
                     Subject = e.SubjectItem.Subject.Name.ToString(),
                     e.SubjectItem.MaxScore,
                     e.Score,
@@ -94,22 +121,25 @@ public class ReportRepository(AppDbContext context) : IReportRepository
                 m.IssuedBy,
                 m.IssuedAt,
             })
-            .FirstOrDefaultAsync();
+            .ToListAsync();
 
-        var json = JsonConvert.SerializeObject(results);
+        response.Success = true;
+        response.Payload = results;
 
-        return json;
+        return response;
     }
 }
 
 
 public record ReportDto
 (
+    float Average,
     string ClassroomId,
     string StudentId,
-    int Month,
+    MonthOfYear Month,
     string IssuedBy,
-    string IssuedAt,
+    float TotalScore,
+    GradeLevel OverallGrade,
     int Absence,
     int Permission,
     string? TeacherCmt,
@@ -121,5 +151,5 @@ public record ReportItemDto
 (
     int SubjectItemId,
     float Score,
-    int GradeId
+    GradeLevel GradeId
 );

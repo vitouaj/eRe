@@ -1,4 +1,7 @@
-﻿using eRe.Infrastructure;
+﻿using eRe.Dto;
+using eRe.Infrastructure;
+using eRe.User;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.EntityFrameworkCore;
 using Npgsql.Internal;
 
@@ -6,19 +9,23 @@ namespace eRe.Repository;
 
 public interface IClassroomRepository
 {
-    Task<object> GetAllAsync();
-    Task<bool> CreateAsync(ClassroomDto classDto);
+    Task<List<Classroom.Classroom>> GetAllAsync(string Id);
+    Task<Response> CreateAsync(ClassroomDto classDto);
     Task<bool> UpdateAsync(ClassroomDto classDto);
     Task<bool> DeleteAsync(string classId);
     Task<ClassroomDto> GetAsync(string classId);
 
+    Task<Response> GetSubjectsAsync();
 
     /*
         Add Student to Classroom
     */
-    Task<bool> AddSubjectItemAsync(string classroomId, SubjectItemDto subjectItemDto);
-    Task<object> GetSubjectItemsAsync(string classId);
+    Task<Response> AddSubjectItemAsync(string classroomId, SubjectItemDto subjectItemDto);
+    Task<Response> GetSubjectItemsAsync(string classId);
     Task<EnrollResult> EnrollStudents(string classId, List<string> StudentIds);
+
+    Task<Response> GetMonthsAsync();
+    Task<Response> GetEnrollStudentAsync(string classId);
 
 }
 
@@ -37,7 +44,6 @@ public class ClassroomRepository(AppDbContext context) : IClassroomRepository
             if (valid == false)
             {
                 invalidIds.Add(Id);
-                throw new Exception($" Invalid student Id {Id}");
             }
             else
             {
@@ -50,8 +56,17 @@ public class ClassroomRepository(AppDbContext context) : IClassroomRepository
 
     }
 
-    public async Task<bool> CreateAsync(ClassroomDto classDto)
+    public async Task<Response> CreateAsync(ClassroomDto classDto)
     {
+
+        var response = new Response();
+
+        if (classDto.Name == string.Empty)
+        {
+            response.Success = false;
+            response.Message = "Classname can't be empty. Please provide classname";
+            return response;
+        }
 
         var classroom = new Classroom.Classroom
         {
@@ -62,19 +77,20 @@ public class ClassroomRepository(AppDbContext context) : IClassroomRepository
             TeacherId = classDto.TeacherId
         };
 
-        bool result = false;
         try
         {
 
             await db.Classrooms.AddAsync(classroom);
             await db.SaveChangesAsync();
-            result = true;
+            response.Success = true;
+            response.Message = "Classroom created successfully!";
         }
-        catch
+        catch (Exception ex)
         {
-            throw;
+            response.Success = false;
+            response.Message = ex.Message;
         }
-        return result;
+        return response;
     }
 
     public Task<bool> DeleteAsync(string classId)
@@ -82,9 +98,10 @@ public class ClassroomRepository(AppDbContext context) : IClassroomRepository
         throw new NotImplementedException();
     }
 
-    public async Task<object> GetAllAsync()
+    public async Task<List<Classroom.Classroom>> GetAllAsync(string Id)
     {
-        return await db.Classrooms.ToListAsync();
+        var result = await db.Classrooms.Where(c => c.TeacherId == Id).ToListAsync();
+        return result;
     }
 
     public Task<ClassroomDto> GetAsync(string classId)
@@ -97,9 +114,9 @@ public class ClassroomRepository(AppDbContext context) : IClassroomRepository
         throw new NotImplementedException();
     }
 
-    public async Task<bool> AddSubjectItemAsync(string classroomId, SubjectItemDto subjectItemDto)
+    public async Task<Response> AddSubjectItemAsync(string classroomId, SubjectItemDto subjectItemDto)
     {
-        bool result;
+        var result = new Response();
         try
         {
 
@@ -113,19 +130,93 @@ public class ClassroomRepository(AppDbContext context) : IClassroomRepository
 
             await db.SubjectItems.AddAsync(subjectItem);
             await db.SaveChangesAsync();
-            result = true;
+            result.Success = true;
+            result.Message = "Subject Item Created Successfully!";
         }
-        catch
+        catch (Exception ex)
         {
-            throw;
+            result.Success = false;
+            result.Message = ex.Message;
         }
         return result;
     }
 
-    public async Task<object> GetSubjectItemsAsync(string classId)
+    public async Task<Response> GetSubjectItemsAsync(string classId)
     {
-        return await db.SubjectItems.FirstOrDefaultAsync(si => si.ClassroomId.Equals(classId));
+        var response = new Response();
+        var result = await db.SubjectItems
+            .Where(si => si.ClassroomId == classId)
+            .Select(si => new
+            {
+                SubjectItemId = si.Id,
+                SubjectId = ((SubjectType)si.SubjectId).ToString(),
+                si.MaxScore,
+                si.PassingScore
+            })
+            .ToListAsync();
+
+        response.Success = true;
+        response.Payload = result;
+        return response;
     }
+
+    public async Task<Response> GetSubjectsAsync()
+    {
+        var response = new Response();
+        var result = await db.Subjects.Select(s => new
+        {
+            SubjectId = s.Id,
+            SubjectName = s.Name.ToString()
+        }).ToListAsync();
+
+        response.Success = true;
+        response.Payload = result;
+        return response;
+    }
+
+    public async Task<Response> GetEnrollStudentAsync(string classId)
+    {
+        var response = new Response();
+        var students = await db.Enrollments.Where(e => e.ClassroomId == classId).ToListAsync();
+
+        var enrollStudents = new List<object>();
+        foreach (var student in students)
+        {
+            var user = await db.Users
+                .Where(s => s.UserId == student.StudentId)
+                .Select(s => new
+                {
+                    StudentId = s.UserId,
+                    Name = s.Firstname + " " + s.Lastname,
+                })
+                .FirstOrDefaultAsync();
+            if (user != null)
+            {
+                enrollStudents.Add(user);
+            }
+        }
+
+        response.Success = true;
+        response.Payload = enrollStudents;
+        return response;
+    }
+
+    async public Task<Response> GetMonthsAsync()
+    {
+        var response = new Response();
+
+        var months = await db.Months
+            .Select(m => new
+            {
+                Id = m.Id,
+                Value = ((MonthOfYear)m.Value).ToString()
+            })
+            .ToListAsync();
+        response.Success = true;
+        response.Payload = months;
+        return response;
+    }
+
 }
 
 public record ClassroomDto
