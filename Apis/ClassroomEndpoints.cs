@@ -81,6 +81,13 @@ public static class ClassroomEndpoints
             return Results.Ok(result);
         });
 
+        app.MapGet("/report/{reportId}", async (IReportRepository service, string reportId) =>
+        {
+            var result = new Response();
+            result = await service.GetReportByIdAsync(reportId);
+            return result.Success == true ? Results.Ok(result) : Results.NotFound(result);
+        });
+
 
         app.MapGet("/subjects", async (IClassroomRepository service) =>
         {

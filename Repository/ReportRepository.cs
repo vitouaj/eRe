@@ -12,7 +12,7 @@ namespace eRe.Repository;
 public interface IReportRepository
 {
     Task<Response> CreateAsync(string teacherId, ReportDto reportDto);
-
+    Task<Response> GetReportByIdAsync(string reportId);
     Task<Response> GetAllAsync(string classId, MonthOfYear? filterMonth);
 }
 
@@ -128,6 +128,56 @@ public class ReportRepository(AppDbContext context) : IReportRepository
 
         return response;
     }
+
+    public async Task<Response> GetReportByIdAsync(string reportId)
+    {
+        var response = new Response();
+        try
+        {
+            var result = await db.Reports
+                .Include(c => c.ReportItems)
+                .Where(c => c.ReportId == reportId)
+                .Select(m => new
+                {
+                    m.ReportId,
+                    Month = m.Month,
+                    m.StudentId,
+                    StudentFirstname = db.Users.SingleOrDefault(u => u.UserId == m.StudentId).Firstname,
+                    StudentLastname = db.Users.SingleOrDefault(u => u.UserId == m.StudentId).Lastname,
+                    m.ClassroomId,
+                    m.Classroom.Name,
+                    m.OverallGrade,
+                    ReportItems = m.ReportItems.Select(e =>
+                    new
+                    {
+                        Subject = e.SubjectItem.Subject.Name.ToString(),
+                        e.SubjectItem.MaxScore,
+                        e.Score,
+                        Grade = e.GradeId
+                    }),
+                    m.Absence,
+                    m.Permission,
+                    m.TotalScore,
+                    m.Average,
+                    m.TeacherCmt,
+                    m.ParentCmt,
+                    m.Classroom.TeacherId,
+                    m.IssuedBy,
+                    m.IssuedAt,
+                })
+            .SingleOrDefaultAsync();
+
+            response.Success = true;
+            response.Payload = result;
+        }
+        catch (Exception ex)
+        {
+            response.Success = false;
+            response.Message = ex.Message;
+        }
+        return response;
+    }
+
 }
 
 
