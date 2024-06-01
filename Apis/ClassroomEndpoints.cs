@@ -74,12 +74,19 @@ public static class ClassroomEndpoints
             return result.Success == true ? Results.Created("/report", result) : Results.BadRequest(result);
         });
 
-        app.MapGet("/{classroomId}/reports", async (IReportRepository service, string classroomId, MonthOfYear? month) =>
+        app.MapGet("/{classroomId}/reports", async (IReportRepository service, string classroomId, MonthOfYear? month, string? studentId) =>
         {
             var result = new Response();
-            result = await service.GetAllAsync(classroomId, month);
+            result = await service.GetAllAsync(classroomId, month, studentId);
             return Results.Ok(result);
         });
+
+        app.MapGet("/reports/{studentId}", async (IReportRepository service, string studentId) =>
+       {
+           var result = new Response();
+           result = await service.GetByStudentId(studentId);
+           return Results.Ok(result);
+       });
 
         app.MapGet("/report/{reportId}", async (IReportRepository service, string reportId) =>
         {

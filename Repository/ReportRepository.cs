@@ -13,7 +13,9 @@ public interface IReportRepository
 {
     Task<Response> CreateAsync(string teacherId, ReportDto reportDto);
     Task<Response> GetReportByIdAsync(string reportId);
-    Task<Response> GetAllAsync(string classId, MonthOfYear? filterMonth);
+    Task<Response> GetAllAsync(string classId, MonthOfYear? filterMonth, string? studentId);
+
+    Task<Response> GetByStudentId(string studentId);
 }
 
 public class ReportRepository(AppDbContext context) : IReportRepository
@@ -80,7 +82,7 @@ public class ReportRepository(AppDbContext context) : IReportRepository
         return response;
     }
 
-    public async Task<Response> GetAllAsync(string classId, MonthOfYear? filterMonth)
+    public async Task<Response> GetAllAsync(string classId, MonthOfYear? filterMonth, string? studentId)
     {
         var response = new Response();
 
@@ -91,6 +93,11 @@ public class ReportRepository(AppDbContext context) : IReportRepository
         if (filterMonth.HasValue)
         {
             query = query.Where(r => r.Month == filterMonth.Value);
+        }
+
+        if (studentId != null)
+        {
+            query = query.Where(r => r.StudentId == studentId);
         }
 
         var results = await query
@@ -128,6 +135,52 @@ public class ReportRepository(AppDbContext context) : IReportRepository
 
         return response;
     }
+
+    public async Task<Response> GetByStudentId(string studentId)
+    {
+        var response = new Response();
+
+        var query = db.Reports
+            .Include(c => c.ReportItems)
+            .Where(r => r.StudentId.Equals(studentId));
+
+
+        var results = await query
+            .Select(m => new
+            {
+                m.ReportId,
+                Month = ((MonthOfYear)m.Month).ToString(),
+                m.StudentId,
+                StudentFirstname = db.Users.SingleOrDefault(u => u.UserId == m.StudentId).Firstname,
+                StudentLastname = db.Users.SingleOrDefault(u => u.UserId == m.StudentId).Lastname,
+                m.ClassroomId,
+                m.Classroom.Name,
+                ReportItems = m.ReportItems.Select(e =>
+                new
+                {
+                    Subject = e.SubjectItem.Subject.Name.ToString(),
+                    e.SubjectItem.MaxScore,
+                    e.Score,
+                    Grade = ((GradeLevel)e.GradeId).ToString(),
+                }),
+                m.Absence,
+                m.Permission,
+                m.TotalScore,
+                m.Average,
+                m.TeacherCmt,
+                m.ParentCmt,
+                m.Classroom.TeacherId,
+                m.IssuedBy,
+                m.IssuedAt,
+            })
+            .ToListAsync();
+
+        response.Success = true;
+        response.Payload = results;
+
+        return response;
+    }
+
 
     public async Task<Response> GetReportByIdAsync(string reportId)
     {

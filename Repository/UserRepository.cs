@@ -91,8 +91,13 @@ public class UserRepository(AppDbContext context) : IUserRepostory
     public async Task<Response> Login(UserLoginData data)
     {
         var user = await db.Users.Where(u => u.Email == data.email && u.Password == data.password).FirstOrDefaultAsync();
+        var returnData = new
+        {
+            UserId = user.UserId,
+            RoleId = user.RoleId,
+        };
 
-        return user != null ? new Response(true, user.UserId, "Login Successfull") : new Response(false, null, "Incorrect Login");
+        return user != null ? new Response(true, returnData, "Login Successfull") : new Response(false, null, "Incorrect Login");
     }
 
     public async Task<GetUserResponse> GetByUserIdAsync(string userId)
