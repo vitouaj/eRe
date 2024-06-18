@@ -38,7 +38,7 @@ public static class ClassroomEndpoints
 
         app.MapGet("/", async (IClassroomRepository service, string ownerId) =>
         {
-            List<Classroom.Classroom> result = [];
+            object? result = new object();
             try
             {
                 result = await service.GetAllAsync(ownerId);

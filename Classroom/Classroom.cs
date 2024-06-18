@@ -8,7 +8,7 @@ public class Classroom
     public string CreatedBy { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public string UpdatedBy { get; set; } = string.Empty;
-    public DateTime? UpdatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
     public string TeacherId { get; set; }
     public List<Student> Students { get; set; }
     public List<Report> Reports { get; set; }
