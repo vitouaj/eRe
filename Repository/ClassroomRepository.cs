@@ -127,9 +127,30 @@ public class ClassroomRepository(AppDbContext context) : IClassroomRepository
         {
             ClassroomId = c.Id,
             Name = c.Name,
-            Teacher = db.Users.Where(u => u.UserId == c.TeacherId).FirstOrDefault(),
-            SubjectItems = c.SubjectItems,
-            Students = c.Students,
+            Teacher = db.Users.Where(u => u.UserId == c.TeacherId)
+            .Select(t => new {
+                t.Firstname,
+                t.Lastname,
+                Role = t.RoleId.ToString()
+            })
+            .FirstOrDefault(),
+            Reports = c.Reports.Select(r => new {
+                r.ReportId,
+                r.Student.StudentName,
+                Month = r.Month.ToString(),
+                r.IssuedAt,
+                r.ParentCmt
+            }).ToList(),
+            SubjectItems = c.SubjectItems.Select(si => new {
+                si.Id,
+                Name = si.Subject.Name.ToString(),
+                si.MaxScore,
+                si.PassingScore
+            }).ToList(),
+            Students = c.Students.Select(s => new {
+                s.StudentId,
+                s.StudentName
+            }).ToList(),
             NumberOfStudents = c.Students.Count()
         })
         .FirstOrDefaultAsync();

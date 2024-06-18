@@ -53,7 +53,8 @@ public class UserRepository(AppDbContext context) : IUserRepostory
             await db.Users.AddAsync(user);
             if ((UserRole)userDto.RoleId == UserRole.STUDENT)
             {
-                await db.Students.AddAsync(new Classroom.Student { StudentId = user.UserId });
+                var username = user.Firstname + " " + user.Lastname;
+                await db.Students.AddAsync(new Classroom.Student { StudentId = user.UserId, StudentName = username });
             }
             await db.SaveChangesAsync();
 
