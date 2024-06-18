@@ -9,7 +9,7 @@ namespace eRe.Repository;
 
 public interface IClassroomRepository
 {
-    Task<List<Classroom.Classroom>> GetAllAsync(string Id);
+    Task<object?> GetAllAsync(string Id);
     Task<Response> CreateAsync(ClassroomDto classDto);
     Task<Response> UpdateAsync(ClassroomDto classDto);
     Task<Response> DeleteAsync(string classId);
@@ -73,6 +73,7 @@ public class ClassroomRepository(AppDbContext context) : IClassroomRepository
             Id = Utilities.GenerateClassId(),
             Name = classDto.Name,
             CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now,
             CreatedBy = classDto.TeacherId,
             TeacherId = classDto.TeacherId
         };
@@ -112,9 +113,23 @@ public class ClassroomRepository(AppDbContext context) : IClassroomRepository
         return response;
     }
 
-    public async Task<List<Classroom.Classroom>> GetAllAsync(string Id)
+    public async Task<object?> GetAllAsync(string Id)
     {
-        var result = await db.Classrooms.Where(c => c.TeacherId == Id).ToListAsync();
+
+        var result = await db.Classrooms.Where(c => c.TeacherId == Id).Select(c => new {
+            c.Id,
+            c.Name,
+            UpdatedAt = c.UpdatedAt.ToString("dd-MM-yyyy HH:mm:ss"),
+            c.TeacherId,
+            UpdatedBy = db.Users.Where(u => u.UserId == c.UpdatedBy)
+            .Select(u => new {
+                u.UserId,
+                u.Firstname,
+                u.Lastname
+            })
+            .FirstOrDefault(),
+            NumberOfStudents = c.Students.Count()
+        }).ToListAsync();
         return result;
     }
 
@@ -127,9 +142,30 @@ public class ClassroomRepository(AppDbContext context) : IClassroomRepository
         {
             ClassroomId = c.Id,
             Name = c.Name,
-            Teacher = db.Users.Where(u => u.UserId == c.TeacherId).FirstOrDefault(),
-            SubjectItems = c.SubjectItems,
-            Students = c.Students,
+            Teacher = db.Users.Where(u => u.UserId == c.TeacherId)
+            .Select(t => new {
+                t.Firstname,
+                t.Lastname,
+                Role = t.RoleId.ToString()
+            })
+            .FirstOrDefault(),
+            Reports = c.Reports.Select(r => new {
+                r.ReportId,
+                r.Student.StudentName,
+                Month = r.Month.ToString(),
+                r.IssuedAt,
+                r.ParentCmt
+            }).ToList(),
+            SubjectItems = c.SubjectItems.Select(si => new {
+                si.Id,
+                Name = si.Subject.Name.ToString(),
+                si.MaxScore,
+                si.PassingScore
+            }).ToList(),
+            Students = c.Students.Select(s => new {
+                s.StudentId,
+                s.StudentName
+            }).ToList(),
             NumberOfStudents = c.Students.Count()
         })
         .FirstOrDefaultAsync();
