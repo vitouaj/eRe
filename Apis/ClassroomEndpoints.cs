@@ -15,6 +15,27 @@ public static class ClassroomEndpoints
             return result.Success == true ? Results.Created("/classroom", result) : Results.BadRequest(result);
         });
 
+        app.MapPut("/", async (IClassroomRepository service, ClassroomDto classDto) =>
+        {
+            var result = new Dto.Response();
+            result = await service.UpdateAsync(classDto);
+            return result.Success == true ? Results.Ok(result) : Results.BadRequest(result);
+        });
+
+        app.MapGet("/{classroomId}/", async (IClassroomRepository service, string classroomId) =>
+    {
+        var result = await service.GetAsync(classroomId);
+        return result.Success == true ? Results.Ok(result) : Results.BadRequest(result);
+    });
+
+
+        app.MapDelete("/{classroomId}/", async (IClassroomRepository service, string classroomId) =>
+       {
+           var result = new Response();
+           result = await service.DeleteAsync(classroomId);
+           return Results.Ok(result);
+       });
+
         app.MapGet("/", async (IClassroomRepository service, string ownerId) =>
         {
             List<Classroom.Classroom> result = [];

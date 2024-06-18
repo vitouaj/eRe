@@ -11,9 +11,9 @@ public interface IClassroomRepository
 {
     Task<List<Classroom.Classroom>> GetAllAsync(string Id);
     Task<Response> CreateAsync(ClassroomDto classDto);
-    Task<bool> UpdateAsync(ClassroomDto classDto);
-    Task<bool> DeleteAsync(string classId);
-    Task<ClassroomDto> GetAsync(string classId);
+    Task<Response> UpdateAsync(ClassroomDto classDto);
+    Task<Response> DeleteAsync(string classId);
+    Task<Response> GetAsync(string classId);
 
     Task<Response> GetSubjectsAsync();
 
@@ -93,9 +93,23 @@ public class ClassroomRepository(AppDbContext context) : IClassroomRepository
         return response;
     }
 
-    public Task<bool> DeleteAsync(string classId)
+    public async Task<Response> DeleteAsync(string classId)
     {
-        throw new NotImplementedException();
+        var response = new Response();
+        try
+        {
+            var classroom = await db.Classrooms.Where(c => c.Id == classId).FirstOrDefaultAsync();
+            var result = db.Classrooms.Remove(classroom);
+            await db.SaveChangesAsync();
+            response.Success = true;
+            response.Message = "delete success";
+        }
+        catch (Exception ex)
+        {
+            response.Success = false;
+            response.Message = "delete failed";
+        }
+        return response;
     }
 
     public async Task<List<Classroom.Classroom>> GetAllAsync(string Id)
@@ -104,14 +118,65 @@ public class ClassroomRepository(AppDbContext context) : IClassroomRepository
         return result;
     }
 
-    public Task<ClassroomDto> GetAsync(string classId)
+    public async Task<Response> GetAsync(string classId)
     {
-        throw new NotImplementedException();
+        var response = new Response();
+        var classroom = await db.Classrooms
+        .Where(c => c.Id == classId)
+        .Select(c => new
+        {
+            ClassroomId = c.Id,
+            Name = c.Name,
+            Teacher = db.Users.Where(u => u.UserId == c.TeacherId).FirstOrDefault(),
+            SubjectItems = c.SubjectItems,
+            Students = c.Students,
+            NumberOfStudents = c.Students.Count()
+        })
+        .FirstOrDefaultAsync();
+
+        if (classroom == null)
+        {
+            response.Success = false;
+            response.Message = "couldn't find classroom";
+        }
+        else
+        {
+            response.Success = true;
+            response.Payload = classroom;
+            response.Message = "classroom found!";
+        }
+        return response;
     }
 
-    public Task<bool> UpdateAsync(ClassroomDto classDto)
+    public async Task<Response> UpdateAsync(ClassroomDto classDto)
     {
-        throw new NotImplementedException();
+        var result = new Response();
+        try
+        {
+            var classroom = await db.Classrooms.Where(c => c.Id == classDto.Id).FirstOrDefaultAsync();
+
+            if (classroom == null)
+            {
+                throw new Exception("classroom not found");
+            }
+
+            classroom.Name = classDto.Name;
+            classroom.UpdatedBy = classDto.TeacherId;
+            classroom.UpdatedAt = DateTime.Now;
+
+            await db.SaveChangesAsync();
+
+            result.Success = true;
+            result.Payload = classroom;
+            result.Message = "update successfull!";
+        }
+        catch (Exception ex)
+        {
+            result.Success = false;
+            result.Message = ex.Message;
+        }
+
+        return result;
     }
 
     public async Task<Response> AddSubjectItemAsync(string classroomId, SubjectItemDto subjectItemDto)
