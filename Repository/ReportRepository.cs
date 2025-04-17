@@ -1,258 +1,258 @@
-﻿using System.Data.Common;
-using System.Text.Json.Serialization;
-using eRe.Dto;
-using eRe.Infrastructure;
-using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
-using Npgsql.Internal;
+﻿// using System.Data.Common;
+// using System.Text.Json.Serialization;
+// using eRe.Dto;
+// using eRe.Infrastructure;
+// using Microsoft.AspNetCore.Components.Forms;
+// using Microsoft.EntityFrameworkCore;
+// using Newtonsoft.Json;
+// using Npgsql.Internal;
 
-namespace eRe.Repository;
+// namespace eRe.Repository;
 
-public interface IReportRepository
-{
-    Task<Response> CreateAsync(string teacherId, ReportDto reportDto);
-    Task<Response> GetReportByIdAsync(string reportId);
-    Task<Response> GetAllAsync(string classId, MonthOfYear? filterMonth, string? studentId);
+// public interface IReportRepository
+// {
+//     Task<Response> CreateAsync(string teacherId, ReportDto reportDto);
+//     Task<Response> GetReportByIdAsync(string reportId);
+//     Task<Response> GetAllAsync(string classId, MonthOfYear? filterMonth, string? studentId);
 
-    Task<Response> GetByStudentId(string studentId);
-}
+//     Task<Response> GetByStudentId(string studentId);
+// }
 
-public class ReportRepository(AppDbContext context) : IReportRepository
-{
-    private readonly AppDbContext db = context;
-    public async Task<Response> CreateAsync(string teacherId, ReportDto reportDto)
-    {
-        var response = new Response();
-        var report = new Report
-        {
-            ReportId = Utilities.GenerateReportId(),
-            StudentId = reportDto.StudentId,
-            ClassroomId = reportDto.ClassroomId,
-            TotalScore = reportDto.TotalScore,
-            Average = reportDto.Average,
-            OverallGrade = reportDto.OverallGrade,
-            Month = reportDto.Month,
-            IssuedBy = teacherId,
-            IssuedAt = DateTime.Now,
-            Absence = reportDto.Absence,
-            Permission = reportDto.Permission,
-            TeacherCmt = reportDto.TeacherCmt,
-        };
+// public class ReportRepository(AppDbContext context) : IReportRepository
+// {
+//     private readonly AppDbContext db = context;
+//     public async Task<Response> CreateAsync(string teacherId, ReportDto reportDto)
+//     {
+//         var response = new Response();
+//         var report = new Report
+//         {
+//             ReportId = Utilities.GenerateReportId(),
+//             StudentId = reportDto.StudentId,
+//             ClassroomId = reportDto.ClassroomId,
+//             TotalScore = reportDto.TotalScore,
+//             Average = reportDto.Average,
+//             OverallGrade = reportDto.OverallGrade,
+//             Month = reportDto.Month,
+//             IssuedBy = teacherId,
+//             IssuedAt = DateTime.Now,
+//             Absence = reportDto.Absence,
+//             Permission = reportDto.Permission,
+//             TeacherCmt = reportDto.TeacherCmt,
+//         };
 
-        List<ReportItem> reportItems = [];
+//         List<ReportItem> reportItems = [];
 
-        float totalScore = 0;
+//         float totalScore = 0;
 
-        foreach (var ri in reportDto.ReportItems)
-        {
-            var reportItem = new ReportItem
-            {
-                ReportId = report.ReportId,
-                SubjectItemId = ri.SubjectItemId,
-                Score = ri.Score,
-                GradeId = (GradeLevel)ri.GradeId
-            };
+//         foreach (var ri in reportDto.ReportItems)
+//         {
+//             var reportItem = new ReportItem
+//             {
+//                 ReportId = report.ReportId,
+//                 SubjectItemId = ri.SubjectItemId,
+//                 Score = ri.Score,
+//                 GradeId = (GradeLevel)ri.GradeId
+//             };
 
-            totalScore += ri.Score;
+//             totalScore += ri.Score;
 
-            reportItems.Add(reportItem);
-        }
+//             reportItems.Add(reportItem);
+//         }
 
-        report.ReportItems = reportItems;
-        report.TotalScore = totalScore;
-        report.Average = totalScore / reportItems.Count;
-        report.Accepted = false;
-        report.IsSent = false;
+//         report.ReportItems = reportItems;
+//         report.TotalScore = totalScore;
+//         report.Average = totalScore / reportItems.Count;
+//         report.Accepted = false;
+//         report.IsSent = false;
 
-        try
-        {
-            await db.Reports.AddAsync(report);
-            await db.SaveChangesAsync();
+//         try
+//         {
+//             await db.Reports.AddAsync(report);
+//             await db.SaveChangesAsync();
 
-            response.Success = true;
-            response.Message = "Create report successfully!";
-            response.Payload = report;
-        }
-        catch (Exception ex)
-        {
-            response.Success = false;
-            response.Message = ex.Message;
-        }
-        return response;
-    }
+//             response.Success = true;
+//             response.Message = "Create report successfully!";
+//             response.Payload = report;
+//         }
+//         catch (Exception ex)
+//         {
+//             response.Success = false;
+//             response.Message = ex.Message;
+//         }
+//         return response;
+//     }
 
-    public async Task<Response> GetAllAsync(string classId, MonthOfYear? filterMonth, string? studentId)
-    {
-        var response = new Response();
+//     public async Task<Response> GetAllAsync(string classId, MonthOfYear? filterMonth, string? studentId)
+//     {
+//         var response = new Response();
 
-        var query = db.Reports
-            .Include(c => c.ReportItems)
-            .Where(r => r.ClassroomId.Equals(classId));
+//         var query = db.Reports
+//             .Include(c => c.ReportItems)
+//             .Where(r => r.ClassroomId.Equals(classId));
 
-        if (filterMonth.HasValue)
-        {
-            query = query.Where(r => r.Month == filterMonth.Value);
-        }
+//         if (filterMonth.HasValue)
+//         {
+//             query = query.Where(r => r.Month == filterMonth.Value);
+//         }
 
-        if (studentId != null)
-        {
-            query = query.Where(r => r.StudentId == studentId);
-        }
+//         if (studentId != null)
+//         {
+//             query = query.Where(r => r.StudentId == studentId);
+//         }
 
-        var results = await query
-            .Select(m => new
-            {
-                m.ReportId,
-                Month = ((MonthOfYear)m.Month).ToString(),
-                m.StudentId,
-                StudentFirstname = db.Users.SingleOrDefault(u => u.UserId == m.StudentId).Firstname,
-                StudentLastname = db.Users.SingleOrDefault(u => u.UserId == m.StudentId).Lastname,
-                m.ClassroomId,
-                m.Classroom.Name,
-                ReportItems = m.ReportItems.Select(e =>
-                new
-                {
-                    Subject = e.SubjectItem.Subject.Name.ToString(),
-                    e.SubjectItem.MaxScore,
-                    e.Score,
-                    Grade = ((GradeLevel)e.GradeId).ToString(),
-                }),
-                m.Absence,
-                m.Permission,
-                m.TotalScore,
-                m.Average,
-                m.TeacherCmt,
-                m.ParentCmt,
-                m.Classroom.TeacherId,
-                m.IssuedBy,
-                m.IssuedAt,
-            })
-            .ToListAsync();
+//         var results = await query
+//             .Select(m => new
+//             {
+//                 m.ReportId,
+//                 Month = ((MonthOfYear)m.Month).ToString(),
+//                 m.StudentId,
+//                 StudentFirstname = db.Users.SingleOrDefault(u => u.UserId == m.StudentId).Firstname,
+//                 StudentLastname = db.Users.SingleOrDefault(u => u.UserId == m.StudentId).Lastname,
+//                 m.ClassroomId,
+//                 m.Classroom.Name,
+//                 ReportItems = m.ReportItems.Select(e =>
+//                 new
+//                 {
+//                     Subject = e.SubjectItem.Subject.Name.ToString(),
+//                     e.SubjectItem.MaxScore,
+//                     e.Score,
+//                     Grade = ((GradeLevel)e.GradeId).ToString(),
+//                 }),
+//                 m.Absence,
+//                 m.Permission,
+//                 m.TotalScore,
+//                 m.Average,
+//                 m.TeacherCmt,
+//                 m.ParentCmt,
+//                 m.Classroom.TeacherId,
+//                 m.IssuedBy,
+//                 m.IssuedAt,
+//             })
+//             .ToListAsync();
 
-        response.Success = true;
-        response.Payload = results;
+//         response.Success = true;
+//         response.Payload = results;
 
-        return response;
-    }
+//         return response;
+//     }
 
-    public async Task<Response> GetByStudentId(string studentId)
-    {
-        var response = new Response();
+//     public async Task<Response> GetByStudentId(string studentId)
+//     {
+//         var response = new Response();
 
-        var query = db.Reports
-            .Include(c => c.ReportItems)
-            .Where(r => r.StudentId.Equals(studentId));
-
-
-        var results = await query
-            .Select(m => new
-            {
-                m.ReportId,
-                Month = ((MonthOfYear)m.Month).ToString(),
-                m.StudentId,
-                StudentFirstname = db.Users.SingleOrDefault(u => u.UserId == m.StudentId).Firstname,
-                StudentLastname = db.Users.SingleOrDefault(u => u.UserId == m.StudentId).Lastname,
-                m.ClassroomId,
-                m.Classroom.Name,
-                ReportItems = m.ReportItems.Select(e =>
-                new
-                {
-                    Subject = e.SubjectItem.Subject.Name.ToString(),
-                    e.SubjectItem.MaxScore,
-                    e.Score,
-                    Grade = ((GradeLevel)e.GradeId).ToString(),
-                }),
-                m.Absence,
-                m.Permission,
-                m.TotalScore,
-                m.Average,
-                m.TeacherCmt,
-                m.ParentCmt,
-                m.Classroom.TeacherId,
-                m.IssuedBy,
-                m.IssuedAt,
-            })
-            .ToListAsync();
-
-        response.Success = true;
-        response.Payload = results;
-
-        return response;
-    }
+//         var query = db.Reports
+//             .Include(c => c.ReportItems)
+//             .Where(r => r.StudentId.Equals(studentId));
 
 
-    public async Task<Response> GetReportByIdAsync(string reportId)
-    {
-        var response = new Response();
-        try
-        {
-            var result = await db.Reports
-                .Include(c => c.ReportItems)
-                .Where(c => c.ReportId == reportId)
-                .Select(m => new
-                {
-                    m.ReportId,
-                    Month = m.Month,
-                    m.StudentId,
-                    StudentFirstname = db.Users.SingleOrDefault(u => u.UserId == m.StudentId).Firstname,
-                    StudentLastname = db.Users.SingleOrDefault(u => u.UserId == m.StudentId).Lastname,
-                    m.ClassroomId,
-                    m.Classroom.Name,
-                    m.OverallGrade,
-                    ReportItems = m.ReportItems.Select(e =>
-                    new
-                    {
-                        Subject = e.SubjectItem.Subject.Name.ToString(),
-                        e.SubjectItem.MaxScore,
-                        e.Score,
-                        Grade = e.GradeId
-                    }),
-                    m.Absence,
-                    m.Permission,
-                    m.TotalScore,
-                    m.Average,
-                    m.TeacherCmt,
-                    m.ParentCmt,
-                    m.Classroom.TeacherId,
-                    m.IssuedBy,
-                    m.IssuedAt,
-                })
-            .SingleOrDefaultAsync();
+//         var results = await query
+//             .Select(m => new
+//             {
+//                 m.ReportId,
+//                 Month = ((MonthOfYear)m.Month).ToString(),
+//                 m.StudentId,
+//                 StudentFirstname = db.Users.SingleOrDefault(u => u.UserId == m.StudentId).Firstname,
+//                 StudentLastname = db.Users.SingleOrDefault(u => u.UserId == m.StudentId).Lastname,
+//                 m.ClassroomId,
+//                 m.Classroom.Name,
+//                 ReportItems = m.ReportItems.Select(e =>
+//                 new
+//                 {
+//                     Subject = e.SubjectItem.Subject.Name.ToString(),
+//                     e.SubjectItem.MaxScore,
+//                     e.Score,
+//                     Grade = ((GradeLevel)e.GradeId).ToString(),
+//                 }),
+//                 m.Absence,
+//                 m.Permission,
+//                 m.TotalScore,
+//                 m.Average,
+//                 m.TeacherCmt,
+//                 m.ParentCmt,
+//                 m.Classroom.TeacherId,
+//                 m.IssuedBy,
+//                 m.IssuedAt,
+//             })
+//             .ToListAsync();
 
-            response.Success = true;
-            response.Payload = result;
-        }
-        catch (Exception ex)
-        {
-            response.Success = false;
-            response.Message = ex.Message;
-        }
-        return response;
-    }
+//         response.Success = true;
+//         response.Payload = results;
 
-}
+//         return response;
+//     }
 
 
-public record ReportDto
-(
-    float Average,
-    string ClassroomId,
-    string StudentId,
-    MonthOfYear Month,
-    string IssuedBy,
-    float TotalScore,
-    GradeLevel OverallGrade,
-    int Absence,
-    int Permission,
-    string? TeacherCmt,
-    List<ReportItemDto> ReportItems
-);
+//     public async Task<Response> GetReportByIdAsync(string reportId)
+//     {
+//         var response = new Response();
+//         try
+//         {
+//             var result = await db.Reports
+//                 .Include(c => c.ReportItems)
+//                 .Where(c => c.ReportId == reportId)
+//                 .Select(m => new
+//                 {
+//                     m.ReportId,
+//                     Month = m.Month,
+//                     m.StudentId,
+//                     StudentFirstname = db.Users.SingleOrDefault(u => u.UserId == m.StudentId).Firstname,
+//                     StudentLastname = db.Users.SingleOrDefault(u => u.UserId == m.StudentId).Lastname,
+//                     m.ClassroomId,
+//                     m.Classroom.Name,
+//                     m.OverallGrade,
+//                     ReportItems = m.ReportItems.Select(e =>
+//                     new
+//                     {
+//                         Subject = e.SubjectItem.Subject.Name.ToString(),
+//                         e.SubjectItem.MaxScore,
+//                         e.Score,
+//                         Grade = e.GradeId
+//                     }),
+//                     m.Absence,
+//                     m.Permission,
+//                     m.TotalScore,
+//                     m.Average,
+//                     m.TeacherCmt,
+//                     m.ParentCmt,
+//                     m.Classroom.TeacherId,
+//                     m.IssuedBy,
+//                     m.IssuedAt,
+//                 })
+//             .SingleOrDefaultAsync();
+
+//             response.Success = true;
+//             response.Payload = result;
+//         }
+//         catch (Exception ex)
+//         {
+//             response.Success = false;
+//             response.Message = ex.Message;
+//         }
+//         return response;
+//     }
+
+// }
 
 
-public record ReportItemDto
-(
-    int SubjectItemId,
-    float Score,
-    GradeLevel GradeId
-);
+// public record ReportDto
+// (
+//     float Average,
+//     string ClassroomId,
+//     string StudentId,
+//     MonthOfYear Month,
+//     string IssuedBy,
+//     float TotalScore,
+//     GradeLevel OverallGrade,
+//     int Absence,
+//     int Permission,
+//     string? TeacherCmt,
+//     List<ReportItemDto> ReportItems
+// );
+
+
+// public record ReportItemDto
+// (
+//     int SubjectItemId,
+//     float Score,
+//     GradeLevel GradeId
+// );

@@ -1,5 +1,5 @@
 using eRe;
-using eRe.Infrastructure;
+using ERE.Infrastructure;
 using eRe.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,9 +16,9 @@ builder.Services.AddCors(options =>
                           });
 });
 
-builder.Services.AddScoped<IClassroomRepository, ClassroomRepository>();
-builder.Services.AddScoped<IUserRepostory, UserRepository>();
-builder.Services.AddScoped<IReportRepository, ReportRepository>();
+// builder.Services.AddScoped<IClassroomRepository, ClassroomRepository>();
+// builder.Services.AddScoped<IUserRepostory, UserRepository>();
+// builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -41,13 +41,13 @@ app.UseHttpsRedirection();
 
 int version = 1;
 
-app.MapGroup($"/api/v{version}/user")
-    .WithTags("User Endpoints")
-    .MapUserEndpoints();
+// app.MapGroup($"/api/v{version}/user")
+//     .WithTags("User Endpoints")
+//     .MapUserEndpoints();
 
-app.MapGroup($"/api/v{version}/classroom")
-    .WithTags("Classroom Endpoints")
-    .MapClassroomEndpoints();
+// app.MapGroup($"/api/v{version}/classroom")
+//     .WithTags("Classroom Endpoints")
+//     .MapClassroomEndpoints();
 
 
 app.Run();

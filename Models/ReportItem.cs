@@ -24,12 +24,12 @@ public class SubjectItem
     public Classroom Classroom { get; set; }
 }
 
-public class Subject
-{
-    public int Id { get; set; }
-    public SubjectType Name { get; set; }
-    public List<SubjectItem> SubjectItems { get; set; } = null!;
-}
+// public class Subject
+// {
+//     public int Id { get; set; }
+//     public SubjectType Name { get; set; }
+//     public List<SubjectItem> SubjectItems { get; set; } = null!;
+// }
 
 public enum SubjectType
 {

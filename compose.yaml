@@ -16,7 +16,7 @@ services:
       - PGADMIN_DEFAULT_EMAIL=tou@ere.com
       - PGADMIN_DEFAULT_PASSWORD=tou
     ports:
-      - 80:80
+      - 8080:80
     depends_on:
       - ere.db.server
     volumes:

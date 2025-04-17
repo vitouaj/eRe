@@ -8,5 +8,6 @@ public class User
     public string Email { get; set; } = string.Empty;
     public string Password { get; set; }
     public string Phone { get; set; } = string.Empty;
-    public Role Role { get; set; }
+    public RoleId RoleId { get; set; }
+    public Role Role__r {get; set;} = null!; // required
 }
