@@ -1,4 +1,4 @@
-﻿namespace eRe.Classroom;
+﻿namespace ERE.Models;
 
 public class Enrollment
 {

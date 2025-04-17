@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Http.Features;
+﻿using ERE.Models;
 
-namespace eRe;
+namespace ERE.Models;
 
 public class ReportItem
 {
@@ -21,7 +21,7 @@ public class SubjectItem
     public float PassingScore { get; set; }
     public List<ReportItem> ReportItems { get; set; }
     public string ClassroomId { get; set; }
-    public Classroom.Classroom Classroom { get; set; }
+    public Classroom Classroom { get; set; }
 }
 
 public class Subject

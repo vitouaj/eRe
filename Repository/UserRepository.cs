@@ -37,7 +37,7 @@ public class UserRepository(AppDbContext context) : IUserRepostory
         // check if email already exist
         var user = new User.User
         {
-            UserId = Utilities.GenerateUserId(),
+            Id = Utilities.GenerateUserId(),
             Firstname = userDto.Firstname,
             Lastname = userDto.Lastname,
             Email = userDto.Email,
@@ -54,7 +54,7 @@ public class UserRepository(AppDbContext context) : IUserRepostory
             if ((UserRole)userDto.RoleId == UserRole.STUDENT)
             {
                 var username = user.Firstname + " " + user.Lastname;
-                await db.Students.AddAsync(new Classroom.Student { StudentId = user.UserId, StudentName = username });
+                await db.Students.AddAsync(new Classroom.Student { Id = user.Id, Name = username });
             }
             await db.SaveChangesAsync();
 
@@ -94,7 +94,7 @@ public class UserRepository(AppDbContext context) : IUserRepostory
         var user = await db.Users.Where(u => u.Email == data.email && u.Password == data.password).FirstOrDefaultAsync();
         var returnData = new
         {
-            UserId = user.UserId,
+            UserId = user.Id,
             RoleId = user.RoleId,
         };
 
@@ -103,12 +103,12 @@ public class UserRepository(AppDbContext context) : IUserRepostory
 
     public async Task<GetUserResponse> GetByUserIdAsync(string userId)
     {
-        var result = await db.Users.Where(u => u.UserId == userId).FirstOrDefaultAsync();
+        var result = await db.Users.Where(u => u.Id == userId).FirstOrDefaultAsync();
 
 
         var response = new GetUserResponse
         {
-            UserID = result.UserId,
+            UserID = result.Id,
             Username = result.Firstname + " " + result.Lastname,
             Email = result.Email,
             Phonenumber = result.Phone,

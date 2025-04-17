@@ -1,16 +1,16 @@
 ﻿using System.Security.Principal;
 using System.Text.Json.Serialization;
-using eRe.Classroom;
+using ERE.Models;
 
-namespace eRe;
+namespace ERE.Models;
 
 public class Report
 {
-    public string ReportId { get; set; }
+    public string Id { get; set; }
     public string StudentId { get; set; }
-    public Student Student { get; set; }
+    public Student Student__r { get; set; }
     public string ClassroomId { get; set; }
-    public Classroom.Classroom Classroom { get; set; }
+    public Classroom Classroom__r { get; set; }
     public string IssuedBy { get; set; } = string.Empty;
     public DateTime IssuedAt { get; set; }
     public string UpdatedBy { get; set; } = string.Empty;

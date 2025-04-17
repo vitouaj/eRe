@@ -1,12 +1,11 @@
-﻿using eRe.Classroom;
-using eRe.User;
+﻿using ERE.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace eRe.Infrastructure;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
-    public DbSet<Classroom.Classroom> Classrooms { get; set; }
+    public DbSet<Classroom> Classrooms { get; set; }
     public DbSet<Enrollment> Enrollments { get; set; }
     public DbSet<Student> Students { get; set; }
     public DbSet<Report> Reports { get; set; }
