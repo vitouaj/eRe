@@ -6,8 +6,13 @@ namespace ERE.Infrastructure;
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
     public DbSet<Student> Students { get; set; }
+    public DbSet<Teacher> Teachers { get; set; }
+    public DbSet<Parent> Parents { get; set; }
+    public DbSet<Course> Courses { get; set; }
+    public DbSet<Contact> Contacts { get; set; }
+    public DbSet<Enrollment> Enrollments { get; set; }
+    public DbSet<CourseReport> CourseReports { get; set; }
     public DbSet<User> Users { get; set; }
-    public DbSet<Role> Roles { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder builder)
     {
@@ -57,5 +62,32 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .WithMany()
             .HasForeignKey(t => t.SubjectId)
             .OnDelete(DeleteBehavior.Cascade);
+
+
+        builder.Entity<Parent>()
+            .HasMany(p => p.Students)
+            .WithMany(s => s.Parents)
+            .UsingEntity<Contact>();
+
+        builder.Entity<Course>()
+            .HasOne(c => c.Teacher__r)
+            .WithMany()
+            .HasForeignKey(c => c.TeacherId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<Student>()
+            .HasMany(s => s.Courses)
+            .WithMany(c => c.Students)
+            .UsingEntity<Enrollment>();
+
+        builder.Entity<Enrollment>()
+            .HasAlternateKey(e => new { e.StudentId, e.CourseId });
+
+        builder.Entity<CourseReport>()
+            .HasOne(r => r.Enrollment__r)
+            .WithMany()
+            .HasForeignKey(r => r.EnrollmentId)
+            .OnDelete(DeleteBehavior.Cascade);
+        
     }
 }

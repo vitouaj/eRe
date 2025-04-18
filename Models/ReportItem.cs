@@ -41,12 +41,12 @@ public enum GradeLevel
     A = 1, B, C, D, E, F
 }
 
-public class Grade
-{
-    public int Id { get; set; }
-    public GradeLevel Level { get; set; }
-    public string? Detail { get; set; }
-}
+// public class Grade
+// {
+//     public int Id { get; set; }
+//     public GradeLevel Level { get; set; }
+//     public string? Detail { get; set; }
+// }
 
 public class Month
 {

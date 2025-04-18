@@ -10,9 +10,7 @@ public class Subject
         Id = id;
         Name = id.ToString();
     }
-
     public Subject() { }
-
 }
 
 public enum SubjectId
