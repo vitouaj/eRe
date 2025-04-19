@@ -23,6 +23,8 @@ builder.Services.AddScoped<UtilityService>();
 
 builder.Services.AddScoped<UserRegisterValidator>();
 builder.Services.AddScoped<LoginRequestValidator>();
+builder.Services.AddScoped<CreateCourseValidator>();
+builder.Services.AddScoped<EnrollmentValidator>();
 
 builder.Services.AddCors(options =>
 {
@@ -35,10 +37,8 @@ builder.Services.AddCors(options =>
                           });
 });
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
+    .AddJwtBearer(options => {
+        options.TokenValidationParameters = new TokenValidationParameters {
             ValidateIssuer = true,
             ValidateAudience = true,
             ValidateLifetime = true,
@@ -49,16 +49,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 builder.Services.AddAuthorization();
-// builder.Services.AddScoped<IClassroomRepository, ClassroomRepository>();
 builder.Services.AddScoped<IUserRepostory, UserRepository>();
-// builder.Services.AddScoped<IReportRepository, ReportRepository>();
+builder.Services.AddScoped<ITeacherRepository, TeacherRepository>();
+builder.Services.AddScoped<IStudentRepository, StudentRepository>();
 builder.Services.AddEndpointsApiExplorer();
 // builder.Services.AddSwaggerGen();
-builder.Services.AddSwaggerGen(opt =>
-{
+builder.Services.AddSwaggerGen(opt => {
     opt.SwaggerDoc("v1", new OpenApiInfo { Title = "MyAPI", Version = "v1" });
-    opt.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
+    opt.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme {
         In = ParameterLocation.Header,
         Description = "Please enter token",
         Name = "Authorization",
@@ -67,13 +65,10 @@ builder.Services.AddSwaggerGen(opt =>
         Scheme = "bearer"
     });
 
-    opt.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
+    opt.AddSecurityRequirement(new OpenApiSecurityRequirement {
         {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
+            new OpenApiSecurityScheme {
+                Reference = new OpenApiReference {
                     Type=ReferenceType.SecurityScheme,
                     Id="Bearer"
                 }
@@ -87,8 +82,7 @@ builder.Services.AddDbContext<AppDbContext>();
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var app = builder.Build();
-if (app.Environment.IsDevelopment())
-{
+if (app.Environment.IsDevelopment()) {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
@@ -100,7 +94,12 @@ app.MapGroup($"/api/v{version}/user")
     .WithTags("User Endpoints")
     .MapUserEndpoints();
 
-// app.MapGroup($"/api/v{version}/classroom")
-//     .WithTags("Classroom Endpoints")
-//     .MapClassroomEndpoints();
+app.MapGroup($"/api/v{version}/teacher")
+    .WithTags("Teacher Endpoints")
+    .MapTeacherEndpoints();
+
+app.MapGroup($"/api/v{version}/student")
+    .WithTags("Student Endpoints")
+    .MapStudentEndpoints();
+    
 app.Run();

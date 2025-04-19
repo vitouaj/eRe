@@ -1,9 +1,6 @@
 ﻿using ERE.DTO;
 using ERE.Repository;
-using System.IdentityModel.Tokens.Jwt;
-using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
-using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using ERE.Utilities;
 using ERE.Validators;
@@ -36,7 +33,6 @@ public static class UserEndpoints
                 result.Success = false;
                 result.Message = ex.Message;
             }
-
 
             if (result.Success == true) {
                 string token = util.GenerateJwtToken(request.Email);

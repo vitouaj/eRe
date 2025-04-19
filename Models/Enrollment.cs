@@ -14,7 +14,7 @@
 namespace ERE.Models;
 public class Enrollment
 {
-    public string Id { get; set; }
+    public string Id { get; set; } = Guid.NewGuid().ToString();
     public string StudentId { get; set; }
     public string StudentName { get; set; }
     public string CourseId { get; set; }

@@ -9,7 +9,7 @@
 namespace ERE.Models;
 
 public class Course {
-    public string Id {get; set;}
+    public string Id {get; set;} = Guid.NewGuid().ToString();
     public string TeacherId {get; set;}
     public Teacher Teacher__r {get; set;} = null!;
     public float MaxScore {get; set;}
