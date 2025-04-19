@@ -2,7 +2,7 @@ namespace ERE.Models;
 
 
 public class Parent {
-    public string Id {get ; set;}
+    public string Id {get ; set;} = Guid.NewGuid().ToString();
     public string Name { get; set; }
     public string Email {get; set;}
     public string Phone {get; set;}
@@ -13,6 +13,9 @@ public class Parent {
         Name = user.Firstname + " " + user.Lastname;
         Email = user.Email;
         Phone = user.Phone;
+        UserId = user.Id;
+        User__r = user;
     }
-    public Parent() { }
+    public Parent() {
+     }
 }

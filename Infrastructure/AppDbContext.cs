@@ -89,5 +89,27 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasForeignKey(r => r.EnrollmentId)
             .OnDelete(DeleteBehavior.Cascade);
         
+
+        builder.Entity<Role>()
+            .HasData(
+                new Role { Id = RoleId.TEACHER, Name = "Teacher" },
+                new Role { Id = RoleId.STUDENT, Name = "Student" },
+                new Role { Id = RoleId.PARENT, Name = "Parent" }
+            );
+
+        builder.Entity<Subject>()
+            .HasData(
+                new Subject { Id = SubjectId.MATH, Name = "Math" },
+                new Subject { Id = SubjectId.SCIENCE, Name = "Science" },
+                new Subject { Id = SubjectId.ENGLISH, Name = "English" },
+                new Subject { Id = SubjectId.HISTORY, Name = "History" },
+                new Subject { Id = SubjectId.GEOGRAPHY, Name = "Geography" },
+                new Subject { Id = SubjectId.PHYSICAL_EDUCATION, Name = "Physical Education" },
+                new Subject { Id = SubjectId.ART, Name = "Art" },
+                new Subject { Id = SubjectId.MUSIC, Name = "Music" }
+            );
+
+            //     MATH = 1, SCIENCE, ENGLISH, HISTORY, GEOGRAPHY, PHYSICAL_EDUCATION, ART, MUSIC
+
     }
 }

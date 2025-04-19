@@ -1,4 +1,4 @@
-﻿namespace eRe.Dto;
+﻿namespace ERE.DTO;
 public class Response
 {
     public Response(bool success, object payload, string message)

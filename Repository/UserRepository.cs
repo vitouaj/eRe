@@ -1,132 +1,81 @@
-﻿// using eRe.Dto;
-// using Microsoft.EntityFrameworkCore;
-// using Npgsql.Replication;
+﻿using ERE.DTO;
+using Microsoft.EntityFrameworkCore;
+using ERE.Infrastructure;
+using ERE.Models;
+using ERE.CustomExceptions;
 
-// namespace eRe.Repository;
+namespace ERE.Repository;
+public interface IUserRepostory
+{
+    Task<Response> CreateUser(RegisterRequestDto request);
+    Task<Response> Login(LoginRequestDto request);
+}
+public class UserRepository(AppDbContext context) : IUserRepostory
+{
+    private readonly AppDbContext db = context;
+    public async Task<Response> CreateUser(RegisterRequestDto request)
+    {
+        Response response = new Response();
+        RoleId userRole = (RoleId)request.Role;
+        SubjectId subjectId = (SubjectId)request?.Subject;
 
-// public interface IUserRepostory
-// {
-//     Task<Response> Login(UserLoginData data);
-//     Task<object> GetAllAsync(); // development only
-//     Task<UserDto?> GetAsync(string userId);
-//     Task<Response> CreateAsync(UserDto userDto);
-//     Task<bool> UpdateAsync(string userId);
-//     Task<bool> DeleteAsync(string userId);
-//     Task<GetUserResponse> GetByUserIdAsync(string userId);
+        var user = new User
+        {
+            Firstname = request.FirstName,
+            Lastname = request.LastName,
+            Email = request.Email,
+            Password = request.Password,
+            Phone = request.Phone,
+            RoleId = userRole,
+        };
 
-// }
-// public class UserRepository(AppDbContext context) : IUserRepostory
-// {
-//     private readonly AppDbContext db = context;
-//     public async Task<Response> CreateAsync(UserDto userDto)
-//     {
-//         var response = new Response();
-//         var email = userDto.Email;
-//         var result = await db.Users.FirstOrDefaultAsync(x => x.Email == email);
+        var existingUser = await db.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+        if (existingUser != null) {
+            throw new UserAlreadyExistException();
+        }
 
-//         if (result != null)
-//         {
-//             response.Success = false;
-//             response.Message = "User already exists";
-//             return response;
-//         }
+        // create Teacher | Student | Parent record for this user
+        switch (userRole) {
+            case RoleId.STUDENT:
+                var student = new Student(user);
+                db.Students.Add(student);
+                response.Payload = new { user = student };
+                break;
+            case RoleId.TEACHER:
+                var teacher = new Teacher(user, subjectId);
+                db.Teachers.Add(teacher);
+                response.Payload = new { user = teacher };
+                break;
+            case RoleId.PARENT:
+                var parent = new Parent(user);
+                db.Parents.Add(parent);
+                response.Payload = new { user = parent };
+                break;
+            default:
+                throw new InvalidRoleException();
+        }
 
+        user.Password = BCrypt.Net.BCrypt.HashPassword(request.Password);
+        db.Users.Add(user);
+        await db.SaveChangesAsync();
+        response.Success = true;
+        response.Message = "User created successfully";
+        return response;
+    }
 
-//         // check if email already exist
-//         var user = new User.User
-//         {
-//             Id = Utilities.GenerateUserId(),
-//             Firstname = userDto.Firstname,
-//             Lastname = userDto.Lastname,
-//             Email = userDto.Email,
-//             Password = userDto.Password,
-//             Phone = userDto.Phone,
-//             OtherContact = userDto.OtherContact,
-//             ProfileId = userDto.ProfileId,
-//             RoleId = (UserRole)userDto.RoleId
-//         };
-
-//         try
-//         {
-//             await db.Users.AddAsync(user);
-//             if ((UserRole)userDto.RoleId == UserRole.STUDENT)
-//             {
-//                 var username = user.Firstname + " " + user.Lastname;
-//                 await db.Students.AddAsync(new Classroom.Student { Id = user.Id, Name = username });
-//             }
-//             await db.SaveChangesAsync();
-
-//             response.Success = true;
-//             response.Message = "User created successfully!";
-//         }
-//         catch (Exception ex)
-//         {
-//             response.Success = false;
-//             response.Message = ex.Message;
-//         }
-//         return response;
-//     }
-
-//     public Task<bool> DeleteAsync(string userId)
-//     {
-//         throw new NotImplementedException();
-//     }
-
-//     public async Task<object> GetAllAsync()
-//     {
-//         return await db.Users.ToListAsync();
-//     }
-
-//     public Task<bool> UpdateAsync(string userId)
-//     {
-//         throw new NotImplementedException();
-//     }
-
-//     public Task<UserDto?> GetAsync(string userId)
-//     {
-//         throw new NotImplementedException();
-//     }
-
-//     public async Task<Response> Login(UserLoginData data)
-//     {
-//         var user = await db.Users.Where(u => u.Email == data.email && u.Password == data.password).FirstOrDefaultAsync();
-//         var returnData = new
-//         {
-//             UserId = user.Id,
-//             RoleId = user.RoleId,
-//         };
-
-//         return user != null ? new Response(true, returnData, "Login Successfull") : new Response(false, null, "Incorrect Login");
-//     }
-
-//     public async Task<GetUserResponse> GetByUserIdAsync(string userId)
-//     {
-//         var result = await db.Users.Where(u => u.Id == userId).FirstOrDefaultAsync();
-
-
-//         var response = new GetUserResponse
-//         {
-//             UserID = result.Id,
-//             Username = result.Firstname + " " + result.Lastname,
-//             Email = result.Email,
-//             Phonenumber = result.Phone,
-//             ParentEmail = result.OtherContact,
-//             Role = result.RoleId.ToString(),
-//         };
-
-//         return response;
-//     }
-// }
-
-// public record UserDto
-// (
-//     string? UserId,
-//     string Firstname,
-//     string Lastname,
-//     string Email,
-//     string Password,
-//     string Phone,
-//     string OtherContact,
-//     string? ProfileId,
-//     int? RoleId
-// );
+    public Task<Response> Login(LoginRequestDto request)
+    {
+        Response response = new Response();
+        var user = db.Users.FirstOrDefault(u => u.Email == request.Email);
+        if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.Password))
+        {
+            throw new InvalidLoginException();
+        }
+        response.Success = true;
+        response.Payload = new {
+            token = Guid.NewGuid().ToString(),
+        };
+        response.Message = "Login successful";
+        return Task.FromResult(response);
+    }
+}

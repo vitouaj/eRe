@@ -3,6 +3,7 @@ using System;
 using ERE.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace eRe.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250418170550_SeedRoles")]
+    partial class SeedRoles
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -258,48 +261,6 @@ namespace eRe.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Subject");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Name = "Math"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Name = "Science"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Name = "English"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Name = "History"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            Name = "Geography"
-                        },
-                        new
-                        {
-                            Id = 6,
-                            Name = "Physical Education"
-                        },
-                        new
-                        {
-                            Id = 7,
-                            Name = "Art"
-                        },
-                        new
-                        {
-                            Id = 8,
-                            Name = "Music"
-                        });
                 });
 
             modelBuilder.Entity("ERE.Models.Teacher", b =>

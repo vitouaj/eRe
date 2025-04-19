@@ -1,50 +1,52 @@
-﻿// using System.ComponentModel.DataAnnotations;
-// using eRe.Dto;
-// using eRe.Repository;
-// using Microsoft.AspNetCore.Mvc;
+﻿using ERE.DTO;
+using ERE.Repository;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.AspNetCore.Authorization;
+using ERE.Utilities;
+using ERE.Validators;
+using FluentValidation;
 
-// namespace eRe;
+namespace ERE.APIS;
 
-// public static class UserEndpoints
-// {
-//     public static void MapUserEndpoints(this IEndpointRouteBuilder app)
-//     {
-//         app.MapPost("/register", async (IUserRepostory service, UserDto userDto) =>
-//         {
-//             var result = new Response();
-//             result = await service.CreateAsync(userDto);
-//             return result.Success == true ? Results.Ok(result) : Results.BadRequest(result);
-//         });
-//         app.MapPost("/login", async (IUserRepostory service, UserLoginData data) =>
-//         {
-//             var result = new Response();
+public static class UserEndpoints
+{
+    public static void MapUserEndpoints(this IEndpointRouteBuilder app)
+    {
+        app.MapPost("/register", async (IUserRepostory service, UserRegisterValidator validator, RegisterRequestDto request) => {
+            // Validate the request
+            var result = new Response();
+            try {
+                validator.ValidateAndThrow(request);
+                result = await service.CreateUser(request);
+            } catch (Exception ex) {
+                result.Success = false;
+                result.Message = ex.Message;
+            }
+            return result.Success == true ? Results.Ok(result) : Results.BadRequest(result);
+        });
+        app.MapPost("/login", async (IUserRepostory service, UtilityService util, LoginRequestValidator validator, LoginRequestDto request) => {
+            var result = new Response();
+            try {
+                validator.ValidateAndThrow(request);
+                result = await service.Login(request);
+            } catch (Exception ex) {
+                result.Success = false;
+                result.Message = ex.Message;
+            }
 
-//             try
-//             {
-//                 result = await service.Login(data);
-//             }
-//             catch
-//             {
-//                 throw;
-//             }
 
-//             return result.Success == true ? Results.Ok(result) : Results.BadRequest(result);
-//         });
+            if (result.Success == true) {
+                string token = util.GenerateJwtToken(request.Email);
+                result.Payload = new { token };
+            }
+            return result.Success == true ? Results.Ok(result) : Results.BadRequest(result);
+        });
 
-//         app.MapGet("/me", async (IUserRepostory service, string userId) =>
-//         {
-//             var result = new GetUserResponse();
-//             try
-//             {
-//                 result = await service.GetByUserIdAsync(userId);
-//             }
-//             catch
-//             {
-//                 throw;
-//             }
-//             return Results.Ok(result);
-//         });
-//     }
-// }
-
-// public record UserLoginData(string email, string password);
+        app.MapGet("/me", [Authorize] async (IUserRepostory service, ClaimsPrincipal user) => {
+            return Results.Ok("Message");
+        });
+    }
+}
