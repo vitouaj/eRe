@@ -29,6 +29,6 @@ public class RegisterRequestDto {
 
     [Required]
     public RoleId Role { get; set; }
-
     public SubjectId? Subject { get; set; } 
+    public List<ContactDto> Contacts { get; set; } = new List<ContactDto>();
 }

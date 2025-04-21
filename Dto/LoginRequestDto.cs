@@ -2,7 +2,7 @@ namespace ERE.DTO;
 
 public class LoginRequestDto
 {
-    public string? Email { get; set; }
+    public string? EmailOrPhoneNumber { get; set; }
     public string? Password { get; set; }
     public string? Token { get; set; }
     public string? DeviceId { get; set; }

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using ERE.Utilities;
 using ERE.Validators;
 using FluentValidation;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace ERE.APIS;
 
@@ -35,14 +36,28 @@ public static class UserEndpoints
             }
 
             if (result.Success == true) {
-                string token = util.GenerateJwtToken(request.Email);
+                string token = util.GenerateJwtToken(request.EmailOrPhoneNumber);
                 result.Payload = new { token };
             }
             return result.Success == true ? Results.Ok(result) : Results.BadRequest(result);
         });
 
         app.MapGet("/me", [Authorize] async (IUserRepostory service, ClaimsPrincipal user) => {
-            return Results.Ok("Message");
+            // var claims = new[]
+            // {
+            //     new Claim(JwtRegisteredClaimNames.Sub, username), // email or phone
+            //     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            // };
+            var identifier = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(identifier)) {
+                return Results.Unauthorized();
+            }
+            
+            Response response = await service.GetUser(identifier);
+            if (response.Success == false) {
+                return Results.NotFound(response);
+            }
+            return Results.Ok(response);
         });
     }
 }

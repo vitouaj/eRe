@@ -5,6 +5,8 @@ namespace ERE.Models;
 public class User
 {
     public string Id { get; set; } = Guid.NewGuid().ToString();
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     [JsonIgnore]
     public string Firstname { get; set; }
@@ -14,7 +16,10 @@ public class User
     [JsonIgnore]
     public string Email { get; set; }
     [JsonIgnore]
-    public string Password { get; set; }
+    public string? Password { get; set; }
+
+    [JsonIgnore]
+    public string DefaultPassword {get; set;} = Guid.NewGuid().ToString().Substring(0, 8);
     [JsonIgnore]
     public string Phone { get; set; }
 

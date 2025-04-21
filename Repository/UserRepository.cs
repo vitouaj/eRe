@@ -3,79 +3,218 @@ using Microsoft.EntityFrameworkCore;
 using ERE.Infrastructure;
 using ERE.Models;
 using ERE.CustomExceptions;
+using Microsoft.IdentityModel.Tokens;
 
 namespace ERE.Repository;
 public interface IUserRepostory
 {
     Task<Response> CreateUser(RegisterRequestDto request);
     Task<Response> Login(LoginRequestDto request);
+    Task<Response> GetUser(string identifier);
 }
 public class UserRepository(AppDbContext context) : IUserRepostory
 {
     private readonly AppDbContext db = context;
     public async Task<Response> CreateUser(RegisterRequestDto request)
     {
-        Response response = new Response();
-        RoleId userRole = (RoleId)request.Role;
-        SubjectId subjectId = (SubjectId)request?.Subject;
-
-        var user = new User
-        {
-            Firstname = request.FirstName,
-            Lastname = request.LastName,
-            Email = request.Email,
-            Password = request.Password,
-            Phone = request.Phone,
-            RoleId = userRole,
-        };
-
         var existingUser = await db.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
         if (existingUser != null) {
             throw new UserAlreadyExistException();
         }
 
-        // create Teacher | Student | Parent record for this user
-        switch (userRole) {
-            case RoleId.STUDENT:
-                var student = new Student(user);
-                db.Students.Add(student);
-                response.Payload = new { user = student };
-                break;
-            case RoleId.TEACHER:
-                var teacher = new Teacher(user, subjectId);
-                db.Teachers.Add(teacher);
-                response.Payload = new { user = teacher };
-                break;
-            case RoleId.PARENT:
-                var parent = new Parent(user);
-                db.Parents.Add(parent);
-                response.Payload = new { user = parent };
-                break;
-            default:
-                throw new InvalidRoleException();
-        }
+        Response response = new Response();
+        RoleId userRole = (RoleId)request.Role;
+        SubjectId subjectId = (SubjectId)request?.Subject;
+       
+        var hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
+        var user = new User {
+            Firstname = request.FirstName,
+            Lastname = request.LastName,
+            Email = request.Email,
+            Password = hashedPassword,
+            Phone = request.Phone,
+            RoleId = userRole,
+        };
 
-        user.Password = BCrypt.Net.BCrypt.HashPassword(request.Password);
-        db.Users.Add(user);
-        await db.SaveChangesAsync();
-        response.Success = true;
-        response.Message = "User created successfully";
-        return response;
+        // create Teacher | Student | Parent record for this user
+        using var transaction = await db.Database.BeginTransactionAsync();
+        try {
+            switch (userRole) {
+                case RoleId.STUDENT:
+                    var student = new Student(user);
+                    var parents = new List<Parent>();
+                    var users = new List<User>(){user};
+                    var contactRecords = new List<Contact>();
+                    
+                    var contactPhones = request.Contacts.Select(c => c.Phone).ToList(); // request
+                    var existingParents = await db.Parents
+                        .Where(u => contactPhones.Contains(u.Phone))
+                        .ToListAsync();
+                    var existingParentPhones = existingParents.Select(c => c.Phone).ToList();
+                    
+
+                    if (!contactPhones.IsNullOrEmpty()) {
+                        foreach (var contact in request.Contacts) {
+                            if (!existingParentPhones.Contains(contact.Phone)) {
+                                var parentUser = new User {
+                                    Firstname = contact.FirstName,
+                                    Lastname = contact.LastName,
+                                    Email = contact.Email,
+                                    Phone = contact.Phone,
+                                    RoleId = RoleId.PARENT,
+                                };
+                                users.Add(parentUser);
+
+                                var parent = new Parent(parentUser);
+                                parents.Add(parent);
+
+                                var cont = new Contact {
+                                    ParentId = parent.Id,
+                                    StudentId = student.Id,
+                                    FirstName = contact.FirstName,
+                                    LastName = contact.LastName,
+                                    Email = contact.Email,
+                                    Phone = contact.Phone,
+                                    HomeNumber = contact.HomeNumber,
+                                    Street = contact.Street,
+                                    Village = contact.Village,
+                                    Commune = contact.Commune,
+                                    District = contact.District,
+                                    Province = contact.Province,
+                                };
+                                contactRecords.Add(cont);
+                            } else {
+                                var existingParent = existingParents.FirstOrDefault(u => u.Phone == contact.Phone);
+
+                                var cont = new Contact {
+                                    ParentId = existingParent.Id,
+                                    StudentId = student.Id,
+                                    FirstName = contact.FirstName,
+                                    LastName = contact.LastName,
+                                    Email = contact.Email,
+                                    Phone = contact.Phone,
+                                    HomeNumber = contact.HomeNumber,
+                                    Street = contact.Street,
+                                    Village = contact.Village,
+                                    Commune = contact.Commune,
+                                    District = contact.District,
+                                    Province = contact.Province,
+                                };
+                                contactRecords.Add(cont);
+                            }
+                        }
+                    }
+                    db.AddRange(users);
+                    db.AddRange(parents);
+                    db.AddRange(contactRecords);
+                    db.Add(student);
+                    response.Payload = new { 
+                        user = student, 
+                        contacts = contactRecords, 
+                     };
+                    break;
+                case RoleId.TEACHER:
+                    var teacher = new Teacher(user, subjectId);
+                    db.Teachers.Add(teacher);
+                    response.Payload = new { user = teacher };
+                    break;
+                default:
+                    throw new InvalidRoleException();
+            }
+            await db.SaveChangesAsync();
+            await transaction.CommitAsync();
+            response.Success = true;
+            response.Message = "User created successfully";
+            return response;
+        } catch {
+            await transaction.RollbackAsync();
+            throw;
+        } 
     }
 
     public Task<Response> Login(LoginRequestDto request)
     {
         Response response = new Response();
-        var user = db.Users.FirstOrDefault(u => u.Email == request.Email);
-        if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.Password))
-        {
+        var user = db.Users.FirstOrDefault(u => u.Email == request.EmailOrPhoneNumber || u.Phone == request.EmailOrPhoneNumber);
+        if (user == null) {
             throw new InvalidLoginException();
         }
+// null check if user.password
+        Boolean isValidPassword = false;
+        if (!string.IsNullOrEmpty(user.Password)) {
+            isValidPassword = BCrypt.Net.BCrypt.Verify(request.Password, user.Password);
+        }
+        if (!isValidPassword && user.DefaultPassword != request.Password) {
+            throw new InvalidLoginException();
+        }
+
         response.Success = true;
         response.Payload = new {
             token = Guid.NewGuid().ToString(),
         };
         response.Message = "Login successful";
         return Task.FromResult(response);
+    }
+
+    public async Task<Response> GetUser(string identifier)
+    {
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Email == identifier || u.Phone == identifier);
+        if (user == null) {
+            throw new StudentNotFoundException();
+        }
+        var response = new Response();
+        if (user.RoleId == RoleId.STUDENT) {
+            var student = await db.Students
+                .Include(s => s.Parents)
+                .ThenInclude(p => p.User__r)
+                .FirstOrDefaultAsync(s => s.UserId == user.Id);
+            
+            response.Payload = student;
+
+        } else if (user.RoleId == RoleId.TEACHER) {
+            var teacher = await db.Teachers
+                .Include(t => t.User__r)
+                .FirstOrDefaultAsync(t => t.UserId == user.Id);
+            response.Payload = teacher;
+        } else if (user.RoleId == RoleId.PARENT) {
+            var parent = await db.Parents
+                .Include(p => p.Students)
+                .Select(p => new {
+                    p.Id,
+                    p.Name,
+                    p.Email,
+                    p.Phone,
+                    p.UserId,
+                    Students = p.Students.Select(s => new {
+                        s.Id,
+                        s.Name,
+                        s.Email,
+                        s.Phone
+                    })
+                })
+                .FirstOrDefaultAsync(p => p.UserId == user.Id);
+
+            response.Payload = parent;
+        }
+        
+        response.Success = true;
+        response.Message = "User found successfully";
+        return response;
+    }
+}
+
+[Serializable]
+internal class ContactAlreadyExistException : Exception
+{
+    public ContactAlreadyExistException()
+    {
+    }
+
+    public ContactAlreadyExistException(string? message) : base(message)
+    {
+    }
+
+    public ContactAlreadyExistException(string? message, Exception? innerException) : base(message, innerException)
+    {
     }
 }

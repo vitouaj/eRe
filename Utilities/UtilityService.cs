@@ -17,7 +17,8 @@ public class UtilityService {
     {
         var claims = new[]
         {
-            new Claim(JwtRegisteredClaimNames.Sub, username),
+            new Claim(ClaimTypes.NameIdentifier, username), // email or phone
+            new Claim(JwtRegisteredClaimNames.Sub, username), // email or phone
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 

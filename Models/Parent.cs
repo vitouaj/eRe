@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace ERE.Models;
 
 
@@ -7,7 +9,11 @@ public class Parent {
     public string Email {get; set;}
     public string Phone {get; set;}
     public string UserId {get; set;}
+
+    [JsonIgnore]
     public User User__r {get; set;} = null!;
+
+    [JsonIgnore]
     public ICollection<Student> Students {get; set;} = new List<Student>();
     public Parent(User user) {
         Name = user.Firstname + " " + user.Lastname;
@@ -17,5 +23,5 @@ public class Parent {
         User__r = user;
     }
     public Parent() {
-     }
+    }
 }
