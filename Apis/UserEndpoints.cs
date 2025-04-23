@@ -34,11 +34,6 @@ public static class UserEndpoints
                 result.Success = false;
                 result.Message = ex.Message;
             }
-
-            if (result.Success == true) {
-                string token = util.GenerateJwtToken(request.EmailOrPhoneNumber);
-                result.Payload = new { token };
-            }
             return result.Success == true ? Results.Ok(result) : Results.BadRequest(result);
         });
 

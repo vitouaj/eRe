@@ -4,6 +4,7 @@ using ERE.Infrastructure;
 using ERE.Models;
 using ERE.CustomExceptions;
 using Microsoft.IdentityModel.Tokens;
+using ERE.Utilities;
 
 namespace ERE.Repository;
 public interface IUserRepostory
@@ -12,8 +13,9 @@ public interface IUserRepostory
     Task<Response> Login(LoginRequestDto request);
     Task<Response> GetUser(string identifier);
 }
-public class UserRepository(AppDbContext context) : IUserRepostory
+public class UserRepository(AppDbContext context, UtilityService utils) : IUserRepostory
 {
+    private readonly UtilityService utility = utils;
     private readonly AppDbContext db = context;
     public async Task<Response> CreateUser(RegisterRequestDto request)
     {
@@ -42,6 +44,7 @@ public class UserRepository(AppDbContext context) : IUserRepostory
             switch (userRole) {
                 case RoleId.STUDENT:
                     var student = new Student(user);
+                    student.LevelId = (LevelId)request.LevelId;
                     var parents = new List<Parent>();
                     var users = new List<User>(){user};
                     var contactRecords = new List<Contact>();
@@ -139,7 +142,7 @@ public class UserRepository(AppDbContext context) : IUserRepostory
         if (user == null) {
             throw new InvalidLoginException();
         }
-// null check if user.password
+        // null check if user.password
         Boolean isValidPassword = false;
         if (!string.IsNullOrEmpty(user.Password)) {
             isValidPassword = BCrypt.Net.BCrypt.Verify(request.Password, user.Password);
@@ -150,23 +153,34 @@ public class UserRepository(AppDbContext context) : IUserRepostory
 
         response.Success = true;
         response.Payload = new {
-            token = Guid.NewGuid().ToString(),
+            token = utility.GenerateJwtToken(user),
         };
         response.Message = "Login successful";
         return Task.FromResult(response);
     }
 
-    public async Task<Response> GetUser(string identifier)
+    public async Task<Response> GetUser(string identifier) 
     {
-        var user = await db.Users.FirstOrDefaultAsync(u => u.Email == identifier || u.Phone == identifier);
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Email == identifier || u.Phone == identifier || u.Id == identifier);
         if (user == null) {
             throw new StudentNotFoundException();
         }
         var response = new Response();
         if (user.RoleId == RoleId.STUDENT) {
             var student = await db.Students
-                .Include(s => s.Parents)
-                .ThenInclude(p => p.User__r)
+                .Include(s => s.Courses)
+                .Select(s => new {
+                    s.Id,
+                    s.Name,
+                    s.Email,
+                    s.Phone,
+                    s.UserId,
+                    Courses = s.Courses.Select(c => new {
+                        c.Id,
+                        c.SubjectId,
+                        c.Teacher__r.Name
+                    })
+                })
                 .FirstOrDefaultAsync(s => s.UserId == user.Id);
             
             response.Payload = student;

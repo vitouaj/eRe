@@ -17,6 +17,7 @@ public class Enrollment
     public string Id { get; set; } = Guid.NewGuid().ToString();
     public string StudentId { get; set; }
     public string StudentName { get; set; }
+    public string StudentEmail {get; set;}
     public string CourseId { get; set; }
     public string CourseName { get; set; }
     public string TeacherId { get; set; }
@@ -27,6 +28,7 @@ public class Enrollment
     public Enrollment(Student student, Course course) {
         StudentId = student.Id;
         StudentName = student.Name;
+        StudentEmail = student.Email;
         CourseId = course.Id;
         CourseName = course.SubjectId.ToString() + " " + course.LevelId.ToString();
         TeacherId = course.TeacherId;

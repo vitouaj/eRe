@@ -11,6 +11,11 @@ public class UserRegisterValidator : AbstractValidator<RegisterRequestDto> {
         RuleFor(x => x.FirstName)
             .NotEmpty().WithMessage("First name is required.")
             .Length(2, 50).WithMessage("First name must be between 2 and 50 characters.");
+        
+        RuleFor(x => x.LevelId)
+            .IsInEnum().WithMessage("Invalid level value. Level must be either 1 (PRIMARY) or 2 (SECONDARY) or 3 (TERTIARY).")
+            .When(x => x.Role == RoleId.STUDENT)
+            .WithMessage("Level is required for students.");
 
         RuleFor(x => x.LastName)
             .NotEmpty().WithMessage("Last name is required.")

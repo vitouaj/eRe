@@ -1,12 +1,16 @@
 
+using ERE.DTO;
+
 namespace ERE.Models;
 
 
 public class CourseReport {
-    public string Id {get; set;}
+    public string Id {get; set;} = Guid.NewGuid().ToString();
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public DateTime UpdatedAt { get; set; } = DateTime.Now;
     public MonthId MonthId { get; set;}
-    // public string CourseId {get; set;}
-    // public string StudentId { get; set;}
+    public string CourseId {get; set;}
+    public string StudentId { get; set;}
     public string EnrollmentId { get; set;}
     public Enrollment Enrollment__r { get; set; } = null!;
     public float Score { get; set;}
@@ -17,16 +21,34 @@ public class CourseReport {
     public string StudentName { get; set; }
     public string TeacherName { get; set; }
     public string CourseName { get; set;}
+    public StatusId StatusId { get; set; } = StatusId.Undone;
 
-    public CourseReport(Enrollment enrollment) {
+    
+    public CourseReport(Enrollment enrollment, MonthId monthId) {
         EnrollmentId = enrollment.Id;
         StudentName = enrollment.StudentName;
         TeacherName = enrollment.TeacherName;
         CourseName = enrollment.CourseName;
+        CourseId = enrollment.CourseId;
+        StudentId = enrollment.StudentId;
+        MonthId = monthId;
         Score = 0;
         GradeId = GradeId.F;
         Absences = 0;
         TeacherCmt = "";
+        ParentCmt = "";
+    }
+     public CourseReport(Enrollment enrollment, MonthId monthId, CreateCourseReportDto courseReportDto) {
+        EnrollmentId = enrollment.Id;
+        StudentName = enrollment.StudentName;
+        TeacherName = enrollment.TeacherName;
+        CourseName = enrollment.CourseName;
+        CourseId = enrollment.CourseId;
+        StudentId = enrollment.StudentId;
+        MonthId = monthId;
+        Score = courseReportDto.Score;
+        Absences = courseReportDto.Absences;
+        TeacherCmt = courseReportDto.TeacherCmt;
         ParentCmt = "";
     }
     public CourseReport() { }
@@ -54,4 +76,10 @@ public enum GradeId {
     D = 4,
     E = 5,
     F = 6
+}
+
+public enum StatusId {
+    Undone = 1,
+    Done = 2,
+    Delivered = 3,
 }

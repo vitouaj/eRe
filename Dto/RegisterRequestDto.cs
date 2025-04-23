@@ -8,6 +8,7 @@ public class RegisterRequestDto {
     public string FirstName { get; set; }
     [Required]
     public string LastName { get; set; }
+    public LevelId? LevelId { get; set; }
 
     [Required]
     [EmailAddress]
