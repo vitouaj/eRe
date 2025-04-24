@@ -5,6 +5,7 @@ using ERE.Models;
 using ERE.CustomExceptions;
 using Microsoft.IdentityModel.Tokens;
 using ERE.Utilities;
+using ERE.DTO;
 
 namespace ERE.Repository;
 public interface IUserRepostory
@@ -13,9 +14,10 @@ public interface IUserRepostory
     Task<Response> Login(LoginRequestDto request);
     Task<Response> GetUser(string identifier);
 }
-public class UserRepository(AppDbContext context, UtilityService utils) : IUserRepostory
+public class UserRepository(AppDbContext context, UtilityService utils, IStudentRepository studentService) : IUserRepostory
 {
     private readonly UtilityService utility = utils;
+    private readonly IStudentRepository studentService = studentService;
     private readonly AppDbContext db = context;
     public async Task<Response> CreateUser(RegisterRequestDto request)
     {
@@ -167,53 +169,76 @@ public class UserRepository(AppDbContext context, UtilityService utils) : IUserR
         }
         var response = new Response();
         if (user.RoleId == RoleId.STUDENT) {
-            var student = await db.Students
-                .Include(s => s.Courses)
-                .Select(s => new {
-                    s.Id,
-                    s.Name,
-                    s.Email,
-                    s.Phone,
-                    s.UserId,
-                    Courses = s.Courses.Select(c => new {
-                        c.Id,
-                        c.SubjectId,
-                        c.Teacher__r.Name
-                    })
-                })
-                .FirstOrDefaultAsync(s => s.UserId == user.Id);
-            
-            response.Payload = student;
+            var getMainReportDto = new GetMainReportDto();
 
-        } else if (user.RoleId == RoleId.TEACHER) {
+            var student = await db.Students
+                .Include(s => s.User__r)
+                .FirstOrDefaultAsync(s => s.UserId == user.Id);
+
+            getMainReportDto.StudentIds = new List<string>() { student.Id };
+            var result = await studentService.GetMainReports(getMainReportDto); 
+            response.Payload = new {
+                Student = student,
+                MainReport = result[student.Id],
+            };
+        } 
+        else if (user.RoleId == RoleId.TEACHER) {
             var teacher = await db.Teachers
                 .Include(t => t.User__r)
                 .FirstOrDefaultAsync(t => t.UserId == user.Id);
-            response.Payload = teacher;
-        } else if (user.RoleId == RoleId.PARENT) {
-            var parent = await db.Parents
-                .Include(p => p.Students)
-                .Select(p => new {
-                    p.Id,
-                    p.Name,
-                    p.Email,
-                    p.Phone,
-                    p.UserId,
-                    Students = p.Students.Select(s => new {
-                        s.Id,
-                        s.Name,
-                        s.Email,
-                        s.Phone
-                    })
-                })
-                .FirstOrDefaultAsync(p => p.UserId == user.Id);
+            response.Payload = teacher;} 
 
-            response.Payload = parent;
+        else if (user.RoleId == RoleId.PARENT) {
+            var parent = await db.Parents
+                .FirstOrDefaultAsync(t => t.UserId == user.Id);
+
+            var studentIds = await db.Contacts
+                .Where(c => c.ParentId == parent.Id)
+                .Select(c => c.StudentId)
+                .ToListAsync();
+
+            var getMainReportDto = new GetMainReportDto();
+            getMainReportDto.StudentIds = studentIds;
+
+            var result = await studentService.GetMainReports(getMainReportDto);
+            response.Payload = new {
+                Parent = parent,
+                Students = result.Select(r => new {
+                    StudentId = r.Key,
+                    StudentName = r.Value.FirstOrDefault().StudentName,
+                    StudentEmail = r.Value.FirstOrDefault().StudentEmail,
+                    MainReport = r.Value,
+                }).ToList(),
+            };
+
+
         }
         
         response.Success = true;
         response.Message = "User found successfully";
         return response;
+    }
+
+    class CourseReportDto {
+        public string Id { get; set; }
+        public string MainReportId { get; set; }
+        public string StatusId { get; set; }
+        public string TeacherName {get; set;}
+        public float Score { get; set; }
+        public float Absences {get; set;}
+
+        public string TeacherCmt { get; set; }
+    }
+
+    class MainReportDto {
+        public string Id { get; set; }
+        public string StudentId { get; set; }
+        public string StudentName { get; set; }
+        public string StudentEmail { get; set; }
+        public MonthId MonthId { get; set; }
+        public LevelId LevelId { get; set; }
+        public string Status { get; set; }
+        public HashSet<CourseReportDto> CourseReports { get; set; }
     }
 }
 

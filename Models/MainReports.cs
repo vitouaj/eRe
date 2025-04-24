@@ -12,8 +12,7 @@ using ERE.DTO;
 
     One main report can have multiple course reports.
 
-
-    When all course reports of the report is status Done, then the report status =+ READY.
+    When all course reports of the report is status Done, then the report status == READY.
 
     When the report is status READY, it can be sent to the student and parent.
 
@@ -28,10 +27,11 @@ public class MainReports {
     public DateTime UpdatedAt { get; set; } = DateTime.Now;
     public ReportStatus Status { get; set; } = ReportStatus.NOT_READY;
     public string StudentId { get; set; }
+    public LevelId LevelId { get; set; }
     public MonthId MonthId { get; set; }
     public string StudentName { get; set; }
     public string StudentEmail { get; set; }
-    public string ParentCmt { get; set; }
+    public string ParentCmt { get; set; } = "";
     public List<CourseReport> CourseReports { get; set; } = new List<CourseReport>();
 }
 

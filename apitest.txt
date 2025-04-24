@@ -1,0 +1,113 @@
+// just registered student
+{
+"studentid": "94f4d0ff-a2da-4794-baff-308bcd59511d",
+      "userId": "cceacf44-c58f-4d13-b492-82c7cd732cd7",
+
+  "firstName": "by",
+  "lastName": "sotheara",
+  "levelId": 11,
+  "email": "vitouaj68@gmail.com",
+  "password": "XrRzDhRrRC4qflVb*q2n",
+  "phone": "0982192124",
+  "role": 1,
+"subject": 1,
+  "contacts": [
+    {
+      "firstName": "By",
+      "lastName": "Savong",
+      "email": "savongfkyou@gmail.com",
+      "phone": "0291213314",
+      "homeNumber": "4st",
+      "street": "betong",
+      "village": "speu",
+      "commune": "spue",
+      "district": "chamkarlue",
+      "province": "Kampong Cham"
+    }
+  ]
+}
+
+// teacher
+"user": {
+      "id": "7dc00539-7fa8-42b8-9cda-fac649c29f7d",
+      "name": "chit soknea",
+      "email": "chitsoknea@gmail.com",
+      "phone": "0129293828",
+        "password": "XrRzDhRrRC4qflVb*q2n",
+      "userId": "67682140-c741-45f6-abad-3bafd1839149",
+      "user__r": {
+        "id": "67682140-c741-45f6-abad-3bafd1839149",
+        "createdAt": "2025-04-23T10:06:40.4309362Z",
+        "updatedAt": "2025-04-23T10:06:40.4309363Z",
+        "isActive": true,
+        "RoleId": "TEACHER"
+      },
+      "SubjectId": "ENGLISH"
+    }
+
+"user": {
+      "id": "18291b53-7338-4410-863c-77536539de68",
+      "name": "Lun Navy",
+      "email": "lunnavy@gmail.com",
+      "phone": "0912132312",
+      "userId": "1674dd1d-722d-41c6-bc9f-79d0dca3abf4",
+        "password": "y5R8UtWOb$SsIUtuwGAd",
+
+      "user__r": {
+        "id": "1674dd1d-722d-41c6-bc9f-79d0dca3abf4",
+        "createdAt": "2025-04-23T10:38:50.5597761Z",
+        "updatedAt": "2025-04-23T10:38:50.5597762Z",
+        "isActive": true,
+        "RoleId": "TEACHER"
+      },
+      "SubjectId": "SCIENCE"
+    }
+"user": {
+      "id": "364ff7a5-b894-4c1d-82bf-6822739077a6",
+      "name": "Norng Sokchan",
+      "email": "norngsokchan@gmail.com",
+      "phone": "09129210222",
+        "password": "GFRxT%oKsan3EeUhetge",
+
+      "userId": "523136cc-d169-4c43-a855-70b9b222ddc5",
+      "user__r": {
+        "id": "523136cc-d169-4c43-a855-70b9b222ddc5",
+        "createdAt": "2025-04-23T15:22:37.9656791Z",
+        "updatedAt": "2025-04-23T15:22:37.9656794Z",
+        "isActive": true,
+        "RoleId": "TEACHER"
+      },
+      "SubjectId": "MATH"
+// Test course Report for the POST /api/teacher/course-report
+{
+  "enrollmentId": "f9bd9c39-95bc-4578-a610-d8b6a32b024d",
+  "monthId": 4,
+  "score": 89,
+  "absences": 2,
+  "teacherCmt": "well done kid"
+}
+
+// course
+{
+  "success": true,
+  "payload": {
+    "id": "9bf44c5a-ff7f-4459-a742-98ecc6fedc97",
+    "teacherId": "7dc00539-7fa8-42b8-9cda-fac649c29f7d",
+    "teacher__r": {
+      "id": "7dc00539-7fa8-42b8-9cda-fac649c29f7d",
+      "name": "chit soknea",
+      "email": "chitsoknea@gmail.com",
+      "phone": "0129293828",
+      "userId": "67682140-c741-45f6-abad-3bafd1839149",
+      "user__r": null,
+      "SubjectId": "ENGLISH"
+    },
+    "maxScore": 100,
+    "passingRate": 55,
+    "levelId": 11,
+    "subjectId": 3,
+    "subject__r": null,
+    "students": []
+  },
+  "message": "Course created successfully"
+}

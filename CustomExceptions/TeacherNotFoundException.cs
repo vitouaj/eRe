@@ -14,3 +14,19 @@ public class TeacherNotFoundException : Exception
     {
     }
 }
+
+[Serializable]
+internal class CourseReportAlreadyExistsException : Exception
+{
+    public CourseReportAlreadyExistsException()
+    {
+    }
+
+    public CourseReportAlreadyExistsException(string? message) : base(message)
+    {
+    }
+
+    public CourseReportAlreadyExistsException(string? message, Exception? innerException) : base(message, innerException)
+    {
+    }
+}

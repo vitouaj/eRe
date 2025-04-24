@@ -3,6 +3,7 @@ using System;
 using ERE.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace eRe.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250423062442_CreateTableMainReport")]
+    partial class CreateTableMainReport
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -207,9 +210,6 @@ namespace eRe.Migrations
                     b.Property<DateTime>("EnrollmentDate")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LevelId")
-                        .HasColumnType("integer");
-
                     b.Property<string>("StudentEmail")
                         .IsRequired()
                         .HasColumnType("text");
@@ -247,9 +247,6 @@ namespace eRe.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("LevelId")
-                        .HasColumnType("integer");
-
                     b.Property<int>("MonthId")
                         .HasColumnType("integer");
 
@@ -276,8 +273,6 @@ namespace eRe.Migrations
                         .HasColumnType("timestamp without time zone");
 
                     b.HasKey("Id");
-
-                    b.HasAlternateKey("StudentId", "MonthId", "LevelId");
 
                     b.ToTable("MainReports");
                 });

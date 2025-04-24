@@ -3,12 +3,18 @@ using Microsoft.EntityFrameworkCore;
 using ERE.Infrastructure;
 using ERE.Models;
 using ERE.CustomExceptions;
+using static ERE.Repository.StudentRepository;
+using Microsoft.IdentityModel.Tokens;
 
 namespace ERE.Repository;
 public interface IStudentRepository
 {
     Task<Response> EnrollCourse(List<EnrollmentDto> requests);
     Task<Response> UnrollCourse(EnrollmentDto request);
+    Task<Dictionary<string, List<MainReportDto>>> GetMainReports(GetMainReportDto request);
+
+    string GetStudentId(string userId);
+
 }
 public class StudentRepository(AppDbContext context) : IStudentRepository
 {
@@ -71,7 +77,6 @@ public class StudentRepository(AppDbContext context) : IStudentRepository
         return response;
     }
 
-
     public async Task<Response> UnrollCourse(EnrollmentDto request)
     {
         FoundEntity found = await throwIfNotFoundAsync(request, db);
@@ -92,89 +97,92 @@ public class StudentRepository(AppDbContext context) : IStudentRepository
     }
 
     private async static Task<FoundEntity> throwIfNotFoundAsync(EnrollmentDto request, AppDbContext db) {
-    var student = await db.Students.FirstOrDefaultAsync(s => s.Id == request.StudentId);
-    if (student == null) {
-        throw new StudentNotFoundException();
+        var student = await db.Students.FirstOrDefaultAsync(s => s.Id == request.StudentId);
+        if (student == null) {
+            throw new StudentNotFoundException();
+        }
+        var course = await db.Courses
+            .Include(c => c.Teacher__r)
+            .FirstOrDefaultAsync(c => c.Id == request.CourseId);
+        if (course == null) {
+            throw new CourseNotFoundException();
+        }
+        return new FoundEntity {
+            Student = student,
+            Course = course
+        };
     }
-    var course = await db.Courses
-        .Include(c => c.Teacher__r)
-        .FirstOrDefaultAsync(c => c.Id == request.CourseId);
-    if (course == null) {
-        throw new CourseNotFoundException();
+
+    // bullk query
+    public async Task<Dictionary<string, List<MainReportDto>>> GetMainReports(GetMainReportDto request) {
+        var students = await db.Students
+            .Where(s => request.StudentIds.Contains(s.Id))
+            .Select(s => new {
+                s.Id,
+                s.Name,
+                s.Email,
+                s.Phone,
+                s.UserId,
+            }).ToListAsync();
+        var studentIds = students.Select(s => s.Id).ToHashSet();
+        var studentMainReports = new Dictionary<string, List<MainReportDto>>();
+        var mainReports = new Dictionary<string, MainReportDto>();
+        if (!students.IsNullOrEmpty()) {
+            mainReports = await db.MainReports
+                .Where(m => studentIds.Contains(m.StudentId) && m.Status == ReportStatus.READY)
+                .ToDictionaryAsync(mr => mr.Id, mr => new MainReportDto {
+                    Id = mr.Id,
+                    LevelId = mr.LevelId,
+                    StudentId = mr.StudentId,
+                    Status = mr.Status.ToString(),
+                    MonthId = mr.MonthId,
+                    StudentName = mr.StudentName,
+                    StudentEmail = mr.StudentEmail,
+                    CourseReports = new HashSet<CourseReportDto>()
+                });
+            
+            var mainReportIds = mainReports.Keys.ToList();
+            var courseReports = await db.CourseReports.Where(cr => mainReportIds.Contains(cr.MainReportId))
+                .Select(cr => new CourseReportDto {
+                    Id = cr.Id,
+                    StatusId = cr.StatusId.ToString(),
+                    MainReportId = cr.MainReportId,
+                    TeacherName = cr.TeacherName,
+                    Score = cr.Score,
+                    Absences = cr.Absences,
+                    TeacherCmt = cr.TeacherCmt
+                }).ToListAsync();
+
+            foreach (var courseReport in courseReports) {
+                if (mainReports.ContainsKey(courseReport.MainReportId)) {
+                    var mainReport = mainReports[courseReport.MainReportId];
+                    mainReport.CourseReports.Add(courseReport);
+                }
+            }
+
+            foreach (var mainReport in mainReports.Values) {
+                if (!studentMainReports.ContainsKey(mainReport.StudentId)) {
+                    studentMainReports[mainReport.StudentId] = new List<MainReportDto>();
+                }
+                studentMainReports[mainReport.StudentId].Add(mainReport);
+            }
+        }
+
+        if (studentMainReports.IsNullOrEmpty()) {
+            return new Dictionary<string, List<MainReportDto>>();
+        }
+        return studentMainReports;
     }
-    return new FoundEntity {
-        Student = student,
-        Course = course
-    };
-}
 
-
-    class FoundEntity {
-        public Student Student = new Student();
-        public Course Course = new Course();
-    }
-}
-
-[Serializable]
-internal class EnrollmentNotFoundException : Exception
-{
-    public EnrollmentNotFoundException()
+    public string GetStudentId(string userId)
     {
+        var student = db.Students.FirstOrDefault(s => s.UserId == userId);
+        if (student == null)
+        {
+            throw new StudentNotFoundException();
+        }
+        return student.Id;
     }
 
-    public EnrollmentNotFoundException(string? message) : base(message)
-    {
-    }
-
-    public EnrollmentNotFoundException(string? message, Exception? innerException) : base(message, innerException)
-    {
-    }
-}
-
-[Serializable]
-internal class EnrollmentAlreadyExistsException : Exception
-{
-    public EnrollmentAlreadyExistsException()
-    {
-    }
-
-    public EnrollmentAlreadyExistsException(string? message) : base(message)
-    {
-    }
-
-    public EnrollmentAlreadyExistsException(string? message, Exception? innerException) : base(message, innerException)
-    {
-    }
-}
-
-[Serializable]
-internal class CourseNotFoundException : Exception
-{
-    public CourseNotFoundException()
-    {
-    }
-
-    public CourseNotFoundException(string? message) : base(message)
-    {
-    }
-
-    public CourseNotFoundException(string? message, Exception? innerException) : base(message, innerException)
-    {
-    }
-}
-
-[Serializable]
-internal class StudentNotFoundException : Exception
-{
-    public StudentNotFoundException()
-    {
-    }
-
-    public StudentNotFoundException(string? message) : base(message)
-    {
-    }
-
-    public StudentNotFoundException(string? message, Exception? innerException) : base(message, innerException)
-    {
-    }
+    
 }

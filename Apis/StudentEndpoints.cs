@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using ERE.DTO;
 using ERE.Repository;
 using ERE.Validators;
@@ -10,10 +11,24 @@ public static class StudentEndpoints
 {
     public static void MapStudentEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/enroll", [Authorize] async (IStudentRepository service, EnrollmentValidator validator, List<EnrollmentDto> requests) => {
+        app.MapPost("/enroll", [Authorize] async (IStudentRepository service, ClaimsPrincipal user, EnrollmentValidator validator, EnrollmentDto request) => {
+            var identifier = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            var studentId = service.GetStudentId(identifier);
+            if (string.IsNullOrEmpty(identifier)) {
+                return Results.Unauthorized();
+            }    
             var result = new Response();
+            var temps = new List<DTO.EnrollmentDto>();
             try {
-                result = await service.EnrollCourse(requests);
+                foreach (var courseId in request.CourseIds) {
+                    var enrollment = new DTO.EnrollmentDto() {
+                        StudentId = studentId,
+                        CourseId = courseId
+                    };
+                    temps.Add(enrollment);
+                    // validator.ValidateAndThrow(request);
+                }
+                result = await service.EnrollCourse(temps);
             } catch (Exception ex) {
                 result.Success = false;
                 result.Message = ex.Message;
@@ -22,4 +37,7 @@ public static class StudentEndpoints
         });
         
     }
-}   
+    public class EnrollmentDto {
+        public List<string> CourseIds { get; set; } = new List<string>();
+    }
+}

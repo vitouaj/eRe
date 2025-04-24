@@ -38,11 +38,6 @@ public static class UserEndpoints
         });
 
         app.MapGet("/me", [Authorize] async (IUserRepostory service, ClaimsPrincipal user) => {
-            // var claims = new[]
-            // {
-            //     new Claim(JwtRegisteredClaimNames.Sub, username), // email or phone
-            //     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-            // };
             var identifier = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(identifier)) {
                 return Results.Unauthorized();

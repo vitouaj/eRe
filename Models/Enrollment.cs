@@ -19,6 +19,7 @@ public class Enrollment
     public string StudentName { get; set; }
     public string StudentEmail {get; set;}
     public string CourseId { get; set; }
+    public LevelId LevelId { get; set; }
     public string CourseName { get; set; }
     public string TeacherId { get; set; }
     public string TeacherName { get; set; }
@@ -29,6 +30,7 @@ public class Enrollment
         StudentId = student.Id;
         StudentName = student.Name;
         StudentEmail = student.Email;
+        LevelId = course.LevelId;
         CourseId = course.Id;
         CourseName = course.SubjectId.ToString() + " " + course.LevelId.ToString();
         TeacherId = course.TeacherId;
