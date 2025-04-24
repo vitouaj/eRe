@@ -38,4 +38,5 @@ public class MainReports {
 public enum ReportStatus {
     NOT_READY = 0,
     READY = 1,
+    FEEDBACK_RECIEVED = 2,
 }

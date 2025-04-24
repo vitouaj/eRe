@@ -14,3 +14,19 @@ public class CourseAlreadyExistsException : Exception
     {
     }
 }
+
+[Serializable]
+public class MainReportNotFoundException : Exception
+{
+    public MainReportNotFoundException()
+    {
+    }
+
+    public MainReportNotFoundException(string? message) : base(message)
+    {
+    }
+
+    public MainReportNotFoundException(string? message, Exception? innerException) : base(message, innerException)
+    {
+    }
+}

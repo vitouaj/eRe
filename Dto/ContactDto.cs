@@ -38,6 +38,7 @@ namespace ERE.DTO
         public MonthId MonthId { get; set; }
         public LevelId LevelId { get; set; }
         public string Status { get; set; }
+        public string ParentCmt { get; set; }
         public HashSet<CourseReportDto> CourseReports { get; set; }
     }
 
@@ -51,5 +52,11 @@ namespace ERE.DTO
         public List<string> StudentIds {get; set;}
         public MonthId? MonthId { get; set; }
         public LevelId? LevelId { get; set; }
+    }
+
+
+    public class ProvideFeedbackDto {
+        public string MainReportId { get; set; }
+        public string Feedback { get; set; }
     }
 }

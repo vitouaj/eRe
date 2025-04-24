@@ -18,7 +18,7 @@ var issuerSigningKey = bearerSettings["IssuerSigningKey"];
 var validAudiences = bearerSettings.GetSection("ValidAudiences").Get<string[]>();
 
 builder.Services.Configure<JwtSettings>(
-    builder.Configuration.GetSection("Authentication:Schemes:Bearer"));
+builder.Configuration.GetSection("Authentication:Schemes:Bearer"));
 builder.Services.AddScoped<UtilityService>();
 builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
 

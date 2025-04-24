@@ -35,6 +35,21 @@ public static class StudentEndpoints
             }
             return result.Success == true ? Results.Ok(result) : Results.BadRequest(result);
         });
+
+        app.MapPatch("/comment", [Authorize] async (IStudentRepository service, ClaimsPrincipal user, ProvideFeedbackDto request) => {
+            var identifier = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(identifier)) {
+                return Results.Unauthorized();
+            }    
+            var result = new Response();
+            try {
+                result = await service.Feedback(request);
+            } catch (Exception ex) {
+                result.Success = false;
+                result.Message = ex.Message;
+            }
+            return result.Success == true ? Results.Ok(result) : Results.BadRequest(result);
+        });
         
     }
     public class EnrollmentDto {

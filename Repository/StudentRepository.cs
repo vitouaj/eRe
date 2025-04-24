@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using ERE.Infrastructure;
 using ERE.Models;
 using ERE.CustomExceptions;
-using static ERE.Repository.StudentRepository;
 using Microsoft.IdentityModel.Tokens;
 
 namespace ERE.Repository;
@@ -12,14 +11,13 @@ public interface IStudentRepository
     Task<Response> EnrollCourse(List<EnrollmentDto> requests);
     Task<Response> UnrollCourse(EnrollmentDto request);
     Task<Dictionary<string, List<MainReportDto>>> GetMainReports(GetMainReportDto request);
-
+    Task<Response> Feedback(ProvideFeedbackDto request);
     string GetStudentId(string userId);
 
 }
 public class StudentRepository(AppDbContext context) : IStudentRepository
 {
     private readonly AppDbContext db = context;
-
     public async Task<Response> EnrollCourse(List<EnrollmentDto> requests) {
         var response = new Response();
         var studentIds = requests.Select(r => r.StudentId).ToHashSet();
@@ -76,7 +74,6 @@ public class StudentRepository(AppDbContext context) : IStudentRepository
         response.Success = true;
         return response;
     }
-
     public async Task<Response> UnrollCourse(EnrollmentDto request)
     {
         FoundEntity found = await throwIfNotFoundAsync(request, db);
@@ -95,7 +92,6 @@ public class StudentRepository(AppDbContext context) : IStudentRepository
         response.Success = true;
         return response;
     }
-
     private async static Task<FoundEntity> throwIfNotFoundAsync(EnrollmentDto request, AppDbContext db) {
         var student = await db.Students.FirstOrDefaultAsync(s => s.Id == request.StudentId);
         if (student == null) {
@@ -112,7 +108,6 @@ public class StudentRepository(AppDbContext context) : IStudentRepository
             Course = course
         };
     }
-
     // bullk query
     public async Task<Dictionary<string, List<MainReportDto>>> GetMainReports(GetMainReportDto request) {
         var students = await db.Students
@@ -129,7 +124,7 @@ public class StudentRepository(AppDbContext context) : IStudentRepository
         var mainReports = new Dictionary<string, MainReportDto>();
         if (!students.IsNullOrEmpty()) {
             mainReports = await db.MainReports
-                .Where(m => studentIds.Contains(m.StudentId) && m.Status == ReportStatus.READY)
+                .Where(m => studentIds.Contains(m.StudentId) && (m.Status == ReportStatus.READY || m.Status == ReportStatus.FEEDBACK_RECIEVED))
                 .ToDictionaryAsync(mr => mr.Id, mr => new MainReportDto {
                     Id = mr.Id,
                     LevelId = mr.LevelId,
@@ -137,6 +132,7 @@ public class StudentRepository(AppDbContext context) : IStudentRepository
                     Status = mr.Status.ToString(),
                     MonthId = mr.MonthId,
                     StudentName = mr.StudentName,
+                    ParentCmt = mr.ParentCmt,
                     StudentEmail = mr.StudentEmail,
                     CourseReports = new HashSet<CourseReportDto>()
                 });
@@ -184,5 +180,24 @@ public class StudentRepository(AppDbContext context) : IStudentRepository
         return student.Id;
     }
 
-    
+    public async Task<Response> Feedback(ProvideFeedbackDto request)
+    {
+        var response = new Response();
+        var mainReport = await db.MainReports
+            .FirstOrDefaultAsync(m => m.Id == request.MainReportId);
+        if (mainReport == null)
+        {
+            throw new MainReportNotFoundException();
+        }
+        mainReport.ParentCmt = request.Feedback;
+        mainReport.Status = ReportStatus.FEEDBACK_RECIEVED;
+        mainReport.UpdatedAt = DateTime.UtcNow;
+
+        await db.SaveChangesAsync();
+        response.Payload = mainReport;
+        response.Message = "Feedback provided successfully";
+        response.Success = true;
+        return response;
+    }
 }
+

@@ -30,7 +30,7 @@ public class UtilityService {
             issuer: _jwtSettings.ValidIssuer,
             audience: _jwtSettings.ValidAudiences[0],
             claims: claims,
-            expires: DateTime.Now.AddMinutes(30),
+            expires: DateTime.Now.AddMinutes(120),
             signingCredentials: creds);
 
         return new JwtSecurityTokenHandler().WriteToken(token);

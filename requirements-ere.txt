@@ -28,6 +28,5 @@ Parent:
 
 
 Todos:
-    22/04
-        1. add userId to jwt claims
-        2. on create course, course reports endpoints, extract userId from jwt claims
+    3. Provide feedbacks and comments to all courses (one comment only to all courses, cmt get stored on each Student's Course Reports)
+        
