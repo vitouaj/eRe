@@ -6,8 +6,7 @@ using ERE.CustomExceptions;
 using Microsoft.IdentityModel.Tokens;
 
 namespace ERE.Repository;
-public interface IStudentRepository
-{
+public interface IStudentRepository {
     Task<Response> EnrollCourse(List<EnrollmentDto> requests);
     Task<Response> UnrollCourse(EnrollmentDto request);
     Task<Dictionary<string, List<MainReportDto>>> GetMainReports(GetMainReportDto request);
@@ -15,8 +14,7 @@ public interface IStudentRepository
     string GetStudentId(string userId);
 
 }
-public class StudentRepository(AppDbContext context) : IStudentRepository
-{
+public class StudentRepository(AppDbContext context) : IStudentRepository {
     private readonly AppDbContext db = context;
     public async Task<Response> EnrollCourse(List<EnrollmentDto> requests) {
         var response = new Response();
@@ -108,7 +106,6 @@ public class StudentRepository(AppDbContext context) : IStudentRepository
             Course = course
         };
     }
-    // bullk query
     public async Task<Dictionary<string, List<MainReportDto>>> GetMainReports(GetMainReportDto request) {
         var students = await db.Students
             .Where(s => request.StudentIds.Contains(s.Id))
@@ -169,7 +166,6 @@ public class StudentRepository(AppDbContext context) : IStudentRepository
         }
         return studentMainReports;
     }
-
     public string GetStudentId(string userId)
     {
         var student = db.Students.FirstOrDefault(s => s.UserId == userId);
@@ -179,7 +175,6 @@ public class StudentRepository(AppDbContext context) : IStudentRepository
         }
         return student.Id;
     }
-
     public async Task<Response> Feedback(ProvideFeedbackDto request)
     {
         var response = new Response();
