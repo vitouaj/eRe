@@ -1,0 +1,33 @@
+User:
+    1. Login
+    2. Logout
+    3. Edit own user information
+
+
+Teacher:
+    1. Register as a teacher, provide subject details
+    2. Create courses based on levels
+    3. Create course reports each Month for students, providing score, and feedbacks (Status = Undone, Done)
+    4. Mark course reports as Done.
+
+
+Student:
+
+    1. Register themself, provide personal information and contacts
+    2. Enroll to a course
+    3. View their own information, Contacts, Courses(Course schedule, course                                                         credits) they have enrolled
+    4. Unrolled a course
+    5. View their Main Reports (accumulation of each Course Report (Status = Done)) by the end of each Months and present it back.
+
+
+Parent:
+    1. Views their childrens
+    2. View their childrens Main Reports (accumulation of each Course Report (Status = Done)) by the end of each Months and present it back.
+
+    3. Provide feedbacks and comments to all courses (one comment only to all courses, cmt get stored on each Student's Course Reports)
+
+
+Todos:
+    22/04
+        1. add userId to jwt claims
+        2. on create course, course reports endpoints, extract userId from jwt claims
