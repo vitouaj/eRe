@@ -30,3 +30,19 @@ public class MainReportNotFoundException : Exception
     {
     }
 }
+
+[Serializable]
+public class ContactAlreadyExistException : Exception
+{
+    public ContactAlreadyExistException()
+    {
+    }
+
+    public ContactAlreadyExistException(string? message) : base(message)
+    {
+    }
+
+    public ContactAlreadyExistException(string? message, Exception? innerException) : base(message, innerException)
+    {
+    }
+}

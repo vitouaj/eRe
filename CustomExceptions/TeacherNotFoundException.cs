@@ -16,7 +16,7 @@ public class TeacherNotFoundException : Exception
 }
 
 [Serializable]
-internal class CourseReportAlreadyExistsException : Exception
+public class CourseReportAlreadyExistsException : Exception
 {
     public CourseReportAlreadyExistsException()
     {

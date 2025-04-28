@@ -13,6 +13,7 @@ public interface IUserRepostory
     Task<Response> CreateUser(RegisterRequestDto request);
     Task<Response> Login(LoginRequestDto request);
     Task<Response> GetUser(string identifier);
+    Task<Response> UpdateUser(string userId, UpdateUserDto request);
 }
 public class UserRepository(AppDbContext context, UtilityService utils, IStudentRepository studentService) : IUserRepostory
 {
@@ -136,7 +137,6 @@ public class UserRepository(AppDbContext context, UtilityService utils, IStudent
             throw;
         } 
     }
-
     public Task<Response> Login(LoginRequestDto request)
     {
         Response response = new Response();
@@ -160,7 +160,6 @@ public class UserRepository(AppDbContext context, UtilityService utils, IStudent
         response.Message = "Login successful";
         return Task.FromResult(response);
     }
-
     public async Task<Response> GetUser(string identifier) 
     {
         var user = await db.Users.FirstOrDefaultAsync(u => u.Email == identifier || u.Phone == identifier || u.Id == identifier);
@@ -186,8 +185,9 @@ public class UserRepository(AppDbContext context, UtilityService utils, IStudent
             var teacher = await db.Teachers
                 .Include(t => t.User__r)
                 .FirstOrDefaultAsync(t => t.UserId == user.Id);
-            response.Payload = teacher;} 
 
+            // get courses with course enrollments
+            response.Payload = teacher;} 
         else if (user.RoleId == RoleId.PARENT) {
             var parent = await db.Parents
                 .FirstOrDefaultAsync(t => t.UserId == user.Id);
@@ -218,6 +218,24 @@ public class UserRepository(AppDbContext context, UtilityService utils, IStudent
         response.Message = "User found successfully";
         return response;
     }
+    public async Task<Response> UpdateUser(string userId, UpdateUserDto request)
+    {
+        var user = db.Users.FirstOrDefault(u => u.Id == userId);
+        if (user == null) {
+            throw new KeyNotFoundException("User not found");
+        }
+        user.Firstname = request.FirstName;
+        user.Lastname = request.LastName;
+        user.Email = request.Email;
+        user.Phone = request.Phone;
+
+        await db.SaveChangesAsync();
+        var response = new Response();
+        response.Success = true;
+        response.Message = "User updated successfully";
+        response.Payload = user;
+        return response;
+    }
 
     class CourseReportDto {
         public string Id { get; set; }
@@ -239,21 +257,5 @@ public class UserRepository(AppDbContext context, UtilityService utils, IStudent
         public LevelId LevelId { get; set; }
         public string Status { get; set; }
         public HashSet<CourseReportDto> CourseReports { get; set; }
-    }
-}
-
-[Serializable]
-internal class ContactAlreadyExistException : Exception
-{
-    public ContactAlreadyExistException()
-    {
-    }
-
-    public ContactAlreadyExistException(string? message) : base(message)
-    {
-    }
-
-    public ContactAlreadyExistException(string? message, Exception? innerException) : base(message, innerException)
-    {
     }
 }
