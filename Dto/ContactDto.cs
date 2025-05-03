@@ -25,8 +25,9 @@ namespace ERE.DTO
         public string StatusId { get; set; }
         public string TeacherName {get; set;}
         public float Score { get; set; }
-        public float Absences {get; set;}
-
+        public int Absences {get; set;}
+        public string? Subject {get; set;}
+        public string TeacherId {get; set;}
         public string TeacherCmt { get; set; }
     }
 
@@ -39,7 +40,36 @@ namespace ERE.DTO
         public LevelId LevelId { get; set; }
         public string Status { get; set; }
         public string ParentCmt { get; set; }
-        public HashSet<CourseReportDto> CourseReports { get; set; }
+        public HashSet<CourseReportDto> CourseReports { get; set; } = new();
+
+        // Recalculated total absence
+        public int TotalAbsence => CourseReports?.Sum(r => r.Absences) ?? 0;
+        public float TotalScore => CourseReports?.Sum(r => r.Score) ?? 0;
+
+        // Recalculated total score (e.g., average)
+        public float AverageScore => CourseReports != null && CourseReports.Count > 0
+            ? CourseReports.Average(r => r.Score)
+            : 0f;
+
+        // Recalculated overall grade (e.g., average or based on rules)
+        public string OverallGrade
+        {
+            get
+            {
+                if (CourseReports == null || CourseReports.Count == 0)
+                    return "N/A";
+
+                var average = AverageScore;
+
+                // Example logic
+                if (average >= 90) return GradeId.A.ToString();
+                if (average >= 80) return GradeId.B.ToString();
+                if (average >= 70) return GradeId.C.ToString();
+                if (average >= 60) return GradeId.D.ToString();
+                if (average >= 50) return GradeId.E.ToString();
+                return GradeId.F.ToString();
+            }
+        }
     }
 
     public class FoundEntity {

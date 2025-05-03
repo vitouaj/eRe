@@ -25,7 +25,9 @@ public static class TeacherEndpoints
                 TeacherId = identifier,
                 Level = request.Level,
                 MaxScore = request.MaxScore,
-                PassingRate = request.PassingRate
+                PassingRate = request.PassingRate,
+                DayOfWeeks = request.DayOfWeeks,
+                TimeOfDays = request.TimeOfDays
             };
             
             var result = new Response();
@@ -94,5 +96,7 @@ public static class TeacherEndpoints
         public LevelId Level { get; set; }
         public float MaxScore { get; set; }
         public float PassingRate { get; set; }
+        public List<Models.DayOfWeek> DayOfWeeks {get; set;}
+        public List<TimeOfDay> TimeOfDays {get; set;}
     }
 }

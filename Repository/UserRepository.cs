@@ -172,12 +172,44 @@ public class UserRepository(AppDbContext context, UtilityService utils, IStudent
 
             var student = await db.Students
                 .Include(s => s.User__r)
+                .Select(s => new {
+                    s.Id,
+                    s.UserId,
+                    Role = s.User__r.RoleIdString,
+                    s.LevelId,
+                    Name = s.User__r.Firstname + ' ' + s.User__r.Lastname,
+                    Phone = s.User__r.Phone,
+                    Email = s.User__r.Email,
+                    CreatedAt = s.User__r.CreatedAt,
+                    UpdatedAt = s.User__r.UpdatedAt
+                })
                 .FirstOrDefaultAsync(s => s.UserId == user.Id);
+            
+            var enrollments = await db.Enrollments.Where(er => er.StudentId == student.Id).ToListAsync();
+            var teacherIds = enrollments.Select(er => er.TeacherId).ToList();
+            var courseIds = enrollments.Select(er => er.CourseId).ToList();
+            var courses = await db.Courses
+                .Where(c => courseIds.Contains(c.Id))
+                .Select(c => new {
+                    c.CourseTimes,
+                    c.CourseDays,
+                    Level = c.LevelId.ToString(),
+                    Subject = c.SubjectId.ToString(),
+                    TeacherName = c.Teacher__r.Name
+                })
+                .ToListAsync();
+
+            var teacherMap = await db.Teachers
+                .Where(t => teacherIds.Contains(t.Id))
+                .ToDictionaryAsync(t => t.Id, t => t.SubjectId.ToString());
+            // build teacherId, Subject map to display
 
             getMainReportDto.StudentIds = new List<string>() { student.Id };
-            var result = await studentService.GetMainReports(getMainReportDto); 
+            var result = await studentService.GetMainReports(getMainReportDto, teacherMap); 
             response.Payload = new {
-                Student = student,
+                User = student,
+                Courses = courses,
+                Enrollments = enrollments,
                 MainReport = result[student.Id],
             };
         } 
@@ -200,7 +232,7 @@ public class UserRepository(AppDbContext context, UtilityService utils, IStudent
             var getMainReportDto = new GetMainReportDto();
             getMainReportDto.StudentIds = studentIds;
 
-            var result = await studentService.GetMainReports(getMainReportDto);
+            var result = await studentService.GetMainReports(getMainReportDto, new Dictionary<string, string>());
             response.Payload = new {
                 Parent = parent,
                 Students = result.Select(r => new {

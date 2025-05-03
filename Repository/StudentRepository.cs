@@ -9,7 +9,7 @@ namespace ERE.Repository;
 public interface IStudentRepository {
     Task<Response> EnrollCourse(List<EnrollmentDto> requests);
     Task<Response> UnrollCourse(EnrollmentDto request);
-    Task<Dictionary<string, List<MainReportDto>>> GetMainReports(GetMainReportDto request);
+    Task<Dictionary<string, List<MainReportDto>>> GetMainReports(GetMainReportDto request, Dictionary<string, string>? teacherDict);
     Task<Response> Feedback(ProvideFeedbackDto request);
     string GetStudentId(string userId);
 
@@ -106,7 +106,7 @@ public class StudentRepository(AppDbContext context) : IStudentRepository {
             Course = course
         };
     }
-    public async Task<Dictionary<string, List<MainReportDto>>> GetMainReports(GetMainReportDto request) {
+    public async Task<Dictionary<string, List<MainReportDto>>> GetMainReports(GetMainReportDto request, Dictionary<string, string>? teacherDict) {
         var students = await db.Students
             .Where(s => request.StudentIds.Contains(s.Id))
             .Select(s => new {
@@ -142,6 +142,8 @@ public class StudentRepository(AppDbContext context) : IStudentRepository {
                     MainReportId = cr.MainReportId,
                     TeacherName = cr.TeacherName,
                     Score = cr.Score,
+                    TeacherId = cr.Enrollment__r.TeacherId,
+                    Subject = !teacherDict.IsNullOrEmpty() ? teacherDict[cr.Enrollment__r.TeacherId] : null,
                     Absences = cr.Absences,
                     TeacherCmt = cr.TeacherCmt
                 }).ToListAsync();

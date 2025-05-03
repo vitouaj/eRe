@@ -16,6 +16,7 @@ public class CourseReport {
     public string CourseId {get; set;}
     public string StudentId { get; set;}
     public string EnrollmentId { get; set;}
+    public string Subject {get; set;}
 
     [JsonIgnore]
     public Enrollment Enrollment__r { get; set; } = null!;

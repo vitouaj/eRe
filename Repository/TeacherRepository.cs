@@ -40,6 +40,8 @@ public class TeacherRepository(AppDbContext context, IMailService mail_service) 
         var newCourse = new Course(teacher, request.Level);
         newCourse.MaxScore = request.MaxScore;
         newCourse.PassingRate = request.PassingRate;
+        newCourse.CourseDays = request.DayOfWeeks;
+        newCourse.CourseTimes = request.TimeOfDays;
         db.Courses.Add(newCourse);
         await db.SaveChangesAsync();
 
