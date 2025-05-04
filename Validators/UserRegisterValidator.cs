@@ -46,41 +46,43 @@ public class UserRegisterValidator : AbstractValidator<RegisterRequestDto> {
             .WithMessage("Subject is required for teachers.");
 
         RuleForEach(x => x.Contacts)
-            .ChildRules(contacts => {
-                contacts.RuleFor(x => x.FirstName)
-                    .NotEmpty().WithMessage("First name is required.")
-                    .Length(2, 50).WithMessage("First name must be between 2 and 50 characters.");
-                    
-                contacts.RuleFor(x => x.LastName)
-                    .NotEmpty().WithMessage("Last name is required.")
-                    .Length(2, 50).WithMessage("Last name must be between 2 and 50 characters.");
+    .ChildRules(contacts => {
+        contacts.RuleFor(c => c.FirstName)
+            .NotEmpty().WithMessage("First name is required.")
+            .Length(2, 50).WithMessage("First name must be between 2 and 50 characters.");
 
-                contacts.RuleFor(x => x.Email)
-                    .NotEmpty().WithMessage("Email is required.")
-                    .EmailAddress().WithMessage("Invalid email format.")
-                    .Length(5, 50).WithMessage("Email must be between 5 and 50 characters.");
+        contacts.RuleFor(c => c.LastName)
+            .NotEmpty().WithMessage("Last name is required.")
+            .Length(2, 50).WithMessage("Last name must be between 2 and 50 characters.");
 
-                contacts.RuleFor(x => x.Phone)
-                    .NotEmpty().WithMessage("Phone number is required.")
-                    .Matches(@"^\+?[0-9]{10,15}$").WithMessage("Invalid phone number format.");
+        contacts.RuleFor(c => c.Email)
+            .NotEmpty().WithMessage("Email is required.")
+            .EmailAddress().WithMessage("Invalid email format.")
+            .Length(5, 50).WithMessage("Email must be between 5 and 50 characters.");
 
-                contacts.RuleFor(x => x.HomeNumber)
-                    .NotEmpty().WithMessage("Home number is required.");
+        contacts.RuleFor(c => c.Phone)
+            .NotEmpty().WithMessage("Phone number is required.")
+            .Matches(@"^\+?[0-9]{10,15}$").WithMessage("Invalid phone number format.");
 
-                contacts.RuleFor(x => x.Street)
-                    .NotEmpty().WithMessage("Street is required.");
+        contacts.RuleFor(c => c.HomeNumber)
+            .NotEmpty().WithMessage("Home number is required.");
 
-                contacts.RuleFor(x => x.Village)
-                    .NotEmpty().WithMessage("Village is required.");
+        contacts.RuleFor(c => c.Street)
+            .NotEmpty().WithMessage("Street is required.");
 
-                contacts.RuleFor(x => x.Commune)
-                    .NotEmpty().WithMessage("Commune is required.");
+        contacts.RuleFor(c => c.Village)
+            .NotEmpty().WithMessage("Village is required.");
 
-                contacts.RuleFor(x => x.District)
-                    .NotEmpty().WithMessage("District is required.");
+        contacts.RuleFor(c => c.Commune)
+            .NotEmpty().WithMessage("Commune is required.");
 
-                contacts.RuleFor(x => x.Province)
-                    .NotEmpty().WithMessage("Province is required.");
-            });
+        contacts.RuleFor(c => c.District)
+            .NotEmpty().WithMessage("District is required.");
+
+        contacts.RuleFor(c => c.Province)
+            .NotEmpty().WithMessage("Province is required.");
+    })
+    .When(x => x.Role == RoleId.STUDENT); // ✅ Apply this AFTER RuleForEach
+
     }
 }

@@ -50,6 +50,14 @@ public static class UserEndpoints
             return Results.Ok(response);
         });
 
+        app.MapGet("/static-options", async (IUserRepostory service) => {
+            Response response = service.GetStaticOptions();
+            if (response.Success == false) {
+                return Results.NotFound(response);
+            }
+            return Results.Ok(response);
+        });
+
         app.MapPatch("/me", [Authorize] async (IUserRepostory service, ClaimsPrincipal user, UpdateUserDto request) => {
             var identifier = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(identifier)) {

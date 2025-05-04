@@ -14,6 +14,7 @@ public interface IUserRepostory
     Task<Response> Login(LoginRequestDto request);
     Task<Response> GetUser(string identifier);
     Task<Response> UpdateUser(string userId, UpdateUserDto request);
+    Response GetStaticOptions();
 }
 public class UserRepository(AppDbContext context, UtilityService utils, IStudentRepository studentService) : IUserRepostory
 {
@@ -22,7 +23,7 @@ public class UserRepository(AppDbContext context, UtilityService utils, IStudent
     private readonly AppDbContext db = context;
     public async Task<Response> CreateUser(RegisterRequestDto request)
     {
-        var existingUser = await db.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+        var existingUser = await db.Users.FirstOrDefaultAsync(u => u.Email == request.Email && u.Phone == request.Phone);
         if (existingUser != null) {
             throw new UserAlreadyExistException();
         }
@@ -181,10 +182,10 @@ public class UserRepository(AppDbContext context, UtilityService utils, IStudent
                     Phone = s.User__r.Phone,
                     Email = s.User__r.Email,
                     CreatedAt = s.User__r.CreatedAt,
-                    UpdatedAt = s.User__r.UpdatedAt
+                    UpdatedAt = s.User__r.UpdatedAt,
                 })
                 .FirstOrDefaultAsync(s => s.UserId == user.Id);
-            
+            var contacts = await db.Contacts.Where(c => c.StudentId == student.Id).ToArrayAsync();
             var enrollments = await db.Enrollments.Where(er => er.StudentId == student.Id).ToListAsync();
             var teacherIds = enrollments.Select(er => er.TeacherId).ToList();
             var courseIds = enrollments.Select(er => er.CourseId).ToList();
@@ -208,46 +209,97 @@ public class UserRepository(AppDbContext context, UtilityService utils, IStudent
             var result = await studentService.GetMainReports(getMainReportDto, teacherMap); 
             response.Payload = new {
                 User = student,
+                Contacts = contacts,
                 Courses = courses,
                 Enrollments = enrollments,
-                MainReport = result[student.Id],
+                MainReport = result.ContainsKey(student.Id) ? result[student.Id]: new List<DTO.MainReportDto>()
             };
         } 
         else if (user.RoleId == RoleId.TEACHER) {
             var teacher = await db.Teachers
                 .Include(t => t.User__r)
+                .Select(s => new {
+                    s.Id,
+                    s.UserId,
+                    Subject = s.SubjectId.ToString(),
+                    Role = s.User__r.RoleIdString,
+                    Name = s.User__r.Firstname + ' ' + s.User__r.Lastname,
+                    Phone = s.User__r.Phone,
+                    Email = s.User__r.Email,
+                    CreatedAt = s.User__r.CreatedAt,
+                    UpdatedAt = s.User__r.UpdatedAt,
+                })
                 .FirstOrDefaultAsync(t => t.UserId == user.Id);
 
+            var courses = await db.Courses
+                .Where(c => c.TeacherId == teacher.Id)
+                .Select(c => new {
+                    c.Id,
+                    c.CourseTimes,
+                    c.CourseDays,
+                    Level = c.LevelId.ToString(),
+                    Subject = c.SubjectId.ToString(),
+                    TeacherName = c.Teacher__r.Name
+                })
+                .ToListAsync();
             // get courses with course enrollments
-            response.Payload = teacher;} 
+            var courseIds = courses.Select(c => c.Id).ToArray();
+            var enrollments = await db.Enrollments.Where(e => courseIds.Contains(e.CourseId)).ToListAsync();
+
+            response.Payload = new {
+                User = teacher,
+                Courses = courses,
+                enrollments
+            };
+        } 
         else if (user.RoleId == RoleId.PARENT) {
             var parent = await db.Parents
+                .Select(s => new {
+                        s.Id,
+                        s.UserId,
+                        Role = s.User__r.RoleIdString,
+                        Name = s.User__r.Firstname + ' ' + s.User__r.Lastname,
+                        Phone = s.User__r.Phone,
+                        Email = s.User__r.Email,
+                        CreatedAt = s.User__r.CreatedAt,
+                        UpdatedAt = s.User__r.UpdatedAt,
+                    })
                 .FirstOrDefaultAsync(t => t.UserId == user.Id);
 
-            var studentIds = await db.Contacts
+            var contacts = await db.Contacts
                 .Where(c => c.ParentId == parent.Id)
-                .Select(c => c.StudentId)
                 .ToListAsync();
+            var studentIds = contacts.Select(c => c.StudentId).ToList();
+            var students = await db.Students
+                .Include(s => s.User__r)
+                .Select(s => new {
+                    s.Id,
+                    s.UserId,
+                    Role = s.User__r.RoleIdString,
+                    s.LevelId,
+                    Name = s.User__r.Firstname + ' ' + s.User__r.Lastname,
+                    Phone = s.User__r.Phone,
+                    Email = s.User__r.Email,
+                    CreatedAt = s.User__r.CreatedAt,
+                    UpdatedAt = s.User__r.UpdatedAt,
+                })
+                .Where(s => studentIds.Contains(s.Id)).ToArrayAsync();
 
             var getMainReportDto = new GetMainReportDto();
             getMainReportDto.StudentIds = studentIds;
 
             var result = await studentService.GetMainReports(getMainReportDto, new Dictionary<string, string>());
             response.Payload = new {
-                Parent = parent,
-                Students = result.Select(r => new {
-                    StudentId = r.Key,
-                    StudentName = r.Value.FirstOrDefault().StudentName,
-                    StudentEmail = r.Value.FirstOrDefault().StudentEmail,
-                    MainReport = r.Value,
-                }).ToList(),
+                User = parent,
+                Students = students,
+                MainReportMap = result
             };
 
 
         }
         
         response.Success = true;
-        response.Message = "User found successfully";
+        response.Message = "Welcome " + user.Firstname + ' '+ user.Lastname + '!';
         return response;
     }
     public async Task<Response> UpdateUser(string userId, UpdateUserDto request)
@@ -266,6 +318,43 @@ public class UserRepository(AppDbContext context, UtilityService utils, IStudent
         response.Success = true;
         response.Message = "User updated successfully";
         response.Payload = user;
+        return response;
+    }
+
+    public Response GetStaticOptions()
+    {
+        var response = new Response();
+        var subjectOptions = Enum.GetValues(typeof(SubjectId))
+                        .Cast<SubjectId>()
+                        .Select(e => new {
+                            Id = e,
+                            Name = e.ToString()
+                        })
+                        .ToList();
+
+        var roleOptions = Enum.GetValues(typeof(RoleId))
+                        .Cast<RoleId>()
+                        .Where(r => r != RoleId.PARENT)
+                        .Select(r => new {
+                            Id = r,
+                            Name = r.ToString()
+                        }).ToList();
+
+         var levelOptions = Enum.GetValues(typeof(LevelId))
+                        .Cast<LevelId>()
+                        .Select(e => new {
+                            Id = e,
+                            Name = e.ToString()
+                        })
+                        .ToList(); 
+
+        response.Message = "subject options retrived successfull";
+        response.Payload = new {
+            roleOptions,
+            subjectOptions,
+            levelOptions
+        };
+        response.Success = true;
         return response;
     }
 
